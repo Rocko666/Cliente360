@@ -25,7 +25,7 @@ FROM
 	ORDER BY
 		created_when_orden DESC) rn
 	FROM
-		db_cs_altas.OTC_T_DESCUENTOS_PLANES
+		${ESQUEMA_CS_ALTAS}.OTC_T_DESCUENTOS_PLANES
 	WHERE
 		p_FECHA_PROCESO = ${FECHAEJE}
 ) t1
@@ -38,21 +38,92 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_despachos AS
 	SELECT
 		*
 FROM
-		db_cs_altas.DESPACHOS_NC_FINAL
+		${ESQUEMA_CS_ALTAS}.DESPACHOS_NC_FINAL
 WHERE
 		fecha_carga = ${fecha_mes_desp}
 	AND
         upper(operadora) = 'MOVISTAR'
 ;
+--TABLA TEMPORAL PARA id_canal DESDE otc_t_catalogo_consolidado_id
+DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_canal;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_canal AS 
+SELECT
+	*
+FROM
+	db_desarrollo2021.otc_t_catalogo_consolidado_id
+WHERE
+	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
+	AND upper(nombre_id)= UPPER('ID_CANAL');
+
+--TABLA TEMPORAL PARA id_sub_canal DESDE otc_t_catalogo_consolidado_id
+DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_sub_canal;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_sub_canal AS 
+SELECT
+	*
+FROM
+	db_desarrollo2021.otc_t_catalogo_consolidado_id
+WHERE
+	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
+	AND upper(nombre_id)= UPPER('ID_SUBCANAL');
+
+--TABLA TEMPORAL PARA id_producto DESDE otc_t_catalogo_consolidado_id
+DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_producto;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_producto AS 
+SELECT
+	*
+FROM
+	db_desarrollo2021.otc_t_catalogo_consolidado_id
+WHERE
+	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
+	AND upper(nombre_id)= UPPER('ID_PRODUCTO');
+
+--TABLA TEMPORAL PARA id_tipo_movimiento DESDE otc_t_catalogo_consolidado_id
+drop table ${ESQUEMA_TEMP}.tmp_catalogo_id_tipo_movimiento;
+create table ${ESQUEMA_TEMP}.tmp_catalogo_id_tipo_movimiento as 
+select 
+id_tipo_movimiento
+, nombre_id
+, extractor 
+, tipo_movimiento
+, case 
+	when upper(tipo_movimiento) like '%TRANSFER%IN%' then 'PRE_POS'
+	when upper(tipo_movimiento) like '%TRANSFER%OUT%' then 'POS_PRE'
+	when upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%' then 'UPSELL'
+	when upper(tipo_movimiento) like '%NO%RECICLABLE%' then 'NO_RECICLABLE'
+	when upper(tipo_movimiento) like '%ALTAS%BAJAS%REPROCESO%' then 'ALTAS_BAJAS_REPROCESO'
+	ELSE tipo_movimiento END AS auxiliar
+from db_desarrollo2021.otc_t_catalogo_consolidado_id  
+where upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
+and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
+union ALL SELECT
+id_tipo_movimiento
+, nombre_id
+, extractor 
+, tipo_movimiento
+, 'DOWNSELL'
+FROM db_desarrollo2021.otc_t_catalogo_consolidado_id  
+where upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%'
+and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
+union ALL SELECT
+id_tipo_movimiento
+, nombre_id
+, extractor 
+, tipo_movimiento
+, 'MISMA_TARIFA'
+FROM db_desarrollo2021.otc_t_catalogo_consolidado_id  
+where upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%'
+and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
+;
+
+
 -- tabla temporal para inclusion de SOLICITUDES DE PORTABILIDAD
 DROP TABLE ${ESQUEMA_TEMP}.tmp_solic_port_in;
-
 CREATE TABLE ${ESQUEMA_TEMP}.tmp_solic_port_in AS
 	SELECT *
-	FROM db_desarrollo2021.r_om_portin_co
-	WHERE FVC >= ${fecha_vc} 
+	FROM db_desarrollo2021.r_om_portin_co --cambiar
+	--WHERE FVC >= ${fecha_vc} 
 ; 
-
+-- CREATED whEN < MES ANALISI 
 INSERT
 	overwrite TABLE db_desarrollo2021.otc_t_360_general_rf PARTITION(fecha_proceso)
 SELECT
@@ -230,30 +301,11 @@ THEN NULL
 	-----------------------------------
 	----------------Insertado en RF
 	-------------------------------------
+	, cat_tm.id_tipo_movimiento AS id_tipo_movimiento
 	, A1.TIPO AS tipo_movimiento
-	, (CASE WHEN lower(cat.nombre_id) = 'id_tipo_movimiento' then
-    (CASE 
-        WHEN lower(A1.TIPO) = lower(cat.tipo_movimiento) THEN cat.id_tipo_movimiento
-        WHEN upper(A1.TIPO) = 'POS_PRE' and 'TRANSFER OUT' = upper(cat.tipo_movimiento) THEN cat.id_tipo_movimiento
-        WHEN upper(A1.TIPO) = 'PRE_POS' and 'TRANSFER IN' = upper(cat.tipo_movimiento) THEN cat.id_tipo_movimiento    
-        WHEN upper(A1.TIPO) IN ('DOWNSELL','UPSELL','MISMA_TARIFA') and 'CAMBIO DE PLAN' = upper(cat.tipo_movimiento) THEN cat.id_tipo_movimiento
-        WHEN upper(A1.SUB_MOVIMIENTO) = upper(cat.tipo_movimiento) THEN cat.id_tipo_movimiento
-		ELSE '' END) END) as id_tipo_movimiento
-	, (CASE
-		WHEN lower(cat.nombre_id) = 'id_canal'
-			AND lower(A1.CANAL_COMERCIAL) = lower(cat.tipo_movimiento)
-			THEN cat.id_tipo_movimiento
-			END) AS id_canal
-	, (CASE
-		WHEN lower(cat.nombre_id) = 'id_subcanal'
-			AND lower(A1.SUB_CANAL_MOVIMIENTO_MES) = lower(cat.tipo_movimiento)
-			THEN cat.id_tipo_movimiento
-			END) AS id_subcanal
-	, (CASE
-		WHEN lower(cat.nombre_id)= 'id_producto'
-			AND lower(A1.SUB_MOVIMIENTO) = lower(cat.TIPO_MOVIMIENTO)
-			THEN cat.ID_TIPO_MOVIMIENTO
-			END) AS id_producto
+	, cat_sc.id_tipo_movimiento AS id_subcanal
+	, cat_p.ID_TIPO_MOVIMIENTO AS id_producto
+	, A1.SUB_MOVIMIENTO
 	, TEC.TECNOLOGIA
 	, datediff(A2.FECHA_MOVIMIENTO_BAJA, t1.fecha_alta) AS DIAS_TRANSCURRIDOS_BAJA
 	, A2.DIAS_EN_PARQUE
@@ -264,7 +316,6 @@ THEN NULL
 		ELSE ''
 	END) AS TIPO_DESCUENTO_CONADIS
 	, DESCU.descripcion_descuento AS TIPO_DESCUENTO
-	-- CONVERT (VARCHAR(32),  hashbytes ('MD5',  concat([telefono], [account_num], substr([fecha_proceso],  6))),  2)as  idHash
 	, A2.CIUDAD
 	, A2.PROVINCIA_ACTIVACION
 	, A2.COD_CATEGORIA
@@ -276,7 +327,6 @@ THEN NULL
 	, A2.VOL_INVOL
 	, A2.ACCOUNT_NUM_ANTERIOR
 	--, A1.FECHA_MOVIMIENTO_MES
-	, A1.SUB_MOVIMIENTO
 	, A1.IMEI
 	, A1.EQUIPO
 	, A1.ICC
@@ -286,6 +336,7 @@ THEN NULL
 	, A1.NOMBRE_USUARIO_SUB
 	--, A1.OFICINA_MOVIMIENTO_MES
 	, A1.FORMA_PAGO
+	, cat_c.id_tipo_movimiento AS id_canal
 	, A1.CANAL_COMERCIAL
 	, A1.CAMPANIA
 	, A1.CODIGO_DISTRIBUIDOR
@@ -359,9 +410,6 @@ ON
 	--20210629 - SE REALIZA EL CRUCE CON LA TEMPORAL PARA AGREGAR CAMPO FECHA NACIMIENTO
 LEFT JOIN db_temporales.tmp_fecha_nacimiento_mvp cs ON
 	(t1.identificacion_cliente = cs.cedula)
-LEFT JOIN db_desarrollo2021.otc_t_catalogo_consolidado_id cat ON
-	('nan' = lower(cat.crite))
-	AND lower(cat.extractor) IN ('movimientos', 'todos')
 LEFT JOIN db_reportes.otc_t_360_modelo TEC ON
 	t1.TELEFONO = TEC.num_telefonico
 	AND (${FECHAEJE} = TEC.fecha_proceso)
@@ -371,4 +419,12 @@ LEFT JOIN db_desarrollo2021.tmp_despachos desp ON
 	A1.icc = desp.icc
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_SOLIC_PORT_IN SPI ON
 	t1.TELEFONO = SPI.telefono
+LEFT JOIN db_desarrollo2021.tmp_catalogo_id_canal cat_c ON
+	upper(A1.CANAL_COMERCIAL) = upper(cat_c.tipo_movimiento)
+LEFT JOIN db_desarrollo2021.tmp_catalogo_id_sub_canal cat_sc ON
+	upper(A1.SUB_CANAL_MOVIMIENTO_MES) = upper(cat_sc.tipo_movimiento)
+LEFT JOIN db_desarrollo2021.tmp_catalogo_id_producto cat_p ON
+	upper(A1.SUB_MOVIMIENTO) = upper(cat_p.tipo_movimiento)
+LEFT JOIN db_desarrollo2021.tmp_catalogo_id_tipo_movimiento cat_tm ON
+	(cat_tm.nombre_id='ID_TIPO_MOVIMIENTO')
 ;

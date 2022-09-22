@@ -124,55 +124,7 @@ VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_P
 VAL_COLA_EJECUCION=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_COLA_EJECUCION';"`
 VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_OTC_T_360_MOVIMIENTOS_PARQUE' AND parametro = 'VAL_USER';"`
 
-#------------------------------------------------------
-# DEFINICION DE FUNCIONES
-#------------------------------------------------------
 
-    # Guarda los resultados en los archivos de correspondientes y registra las entradas en la base de datos de control    
-function log() #funcion 4 argumentos (tipo, tarea, salida, mensaje)
-{
-	if [ "$#" -lt 4 ]; then
-		echo "Faltan argumentos en el llamado a la funcion"
-		return 1 # Numero de argumentos no completo
-	else
-		if [ "$1" = 'e' -o "$1" = 'E' ]; then
-			TIPOLOG=ERROR
-		else
-			TIPOLOG=INFO
-		fi
-			TAREA="$2"
-			MEN="$4"
-			PASO_EJEC="$5"
-			FECHA=`date +%Y"-"%m"-"%d`
-			HORAS=`date +%H":"%M":"%S`
-			TIME=`date +%a" "%d"/"%m"/"%Y" "%X`
-			MSJ=$(echo " $TIME [$TIPOLOG] Tarea: $TAREA - $MEN ")
-			echo $MSJ >> $LOGS/$EJECUCION_LOG.log
-			# mysql -e "insert into logs values ('$ENTIDAD','$EJECUCION','$TIPOLOG','$FECHA','$HORAS','$TAREA',$3,'$MEN','$PASO_EJEC','$NAME_SHELL')"
-			echo $MSJ
-			return 0
-	fi
-}
-
-
-function stat() #funcion 4 argumentos (Tarea, duracion, fuente, destino)
-{
-	if [ "$#" -lt 4 ]; then
-		echo "Faltan argumentos en el llamado a la funcion"
-		return 1 # Numero de argumentos no completo
-	else
-			TAREA="$1"
-			DURACION="$2"
-			FECHA=`date +%Y"-"%m"-"%d`
-			HORAS=`date +%H":"%M":"%S`
-			TIME=`date +%a" "%d"/"%m"/"%Y" "%X`
-			MSJ=$(echo " $TIME [INFO] Tarea: $TAREA - Duracion : $DURACION ")
-			echo $MSJ >> $LOGS/$EJECUCION_LOG.log
-			# mysql -e "insert into stats values ('$ENTIDAD','$EJECUCION','$TAREA','$FECHA $HORAS','$DURACION',$3,'$4')"
-			echo $MSJ
-			return 0
-	fi
-}
 #------------------------------------------------------
 # VERIFICACION INICIAL 
 #------------------------------------------------------
@@ -229,8 +181,7 @@ if [ "$PASO" = "0" ]; then
 		#Validacion de greacion completa
 		if  ! [ -e "$LOGS" ]; then
 		(( rc = 21)) 
-		echo $DIA-$HORA" Error $rc : La ruta $LOGS no pudo ser creada" 
-		log e "CREAR DIRECTORIO LOG" $rc  " $DIA-$HORA' Error $rc: La ruta $LOGS no pudo ser creada'" $PASO	
+		echo $DIA-$HORA" Error $rc : La ruta $LOGS no pudo ser creada" 	
 		exit $rc
 		fi
 	fi
@@ -243,7 +194,6 @@ if [ "$PASO" = "0" ]; then
 	else
 		(( rc = 22))
 		echo $DIA-$HORA" Error $rc : Fallo al crear el archivo de log $LOGS/$EJECUCION_LOG.log"
-		log e "CREAR ARCHIVO LOG" $rc  " $DIA-$HORA' Error $rc: Fallo al crear el archivo de log $LOGS/$EJECUCION_LOG.log'" $PASO
 		exit $rc
 	fi
 	
@@ -256,7 +206,6 @@ if [ "$PASO" = "0" ]; then
 	else
 		(( rc = 23)) 
 		echo $DIA-$HORA" Error $rc : Fallo al crear el archivo de error $LOGS/$EJECUCION_LOG.log"
-		log e "CREAR ARCHIVO LOG ERROR" $rc  " $DIA-$HORA' Error $rc: Fallo al crear el archivo de error $LOGS/$EJECUCION_LOG.log'" $PASO
 		exit $rc
 	fi
 PASO=2
@@ -283,16 +232,16 @@ if [ "$PASO" = "2" ]; then
 
 				# Verificacion de creacion tabla external
 	if [ $? -eq 0 ]; then
-		log i "HIVE" $rc  " Fin de creacion e insert en tabla temporales sin dependencia " $PASO
+		echo "HIVE: $rc  Fin de creacion e insert en tabla temporales sin dependencia " >> $LOGS/$EJECUCION_LOG.log
 		else
 		(( rc = 40)) 
-		log e "HIVE" $rc  " Fallo al ejecutar script desde HIVE - Tabla" $PASO
+		echo "HIVE: $rc  Fallo al ejecutar script desde HIVE - Tabla" >> $LOGS/$EJECUCION_LOG.lo
 		exit $rc
 	fi	
 	FIN=$(date +%s)
 	DIF=$(echo "$FIN - $INICIO" | bc)
 	TOTAL=$(printf '%d:%d:%d\n' $(($DIF/3600)) $(($DIF%3600/60)) $(($DIF%60)))
-	stat "HIVE tablas temporales temp" $TOTAL "0" "0"		
+	echo "HIVE tablas temporales temp" $TOTAL "0" "0"		
  PASO=3
 fi
 echo "==== TERMINA el proceso refactoring D_OTC_T_360_MOVIMIENTOS_PARQUE de forma EXITOSA====" >> $LOGS/$EJECUCION_LOG.log	

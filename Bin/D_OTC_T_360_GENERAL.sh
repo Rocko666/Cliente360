@@ -12,7 +12,7 @@
 #------------------------------------------------------
 # VARIABLES CONFIGURABLES POR PROCESO (MODIFICAR)
 #------------------------------------------------------
-#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220913 3
+#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220920 3
 # ENT. ANTERIOR ----> ENTIDAD=OTC_T_360_GENERAL
 ENTIDAD=D_OTC_T_360_GENERAL
 # AMBIENTE (1=produccion, 0=desarrollo)
@@ -20,7 +20,9 @@ ENTIDAD=D_OTC_T_360_GENERAL
 FECHAEJE=$1 # yyyyMMdd
 # Variable de control de que paso ejecutar
 PASO=$2
-ESQUEMA_TEMP=db_desarrollo2021
+### la linea de abajo se ha comentado para traer el valor correspondiente por parametro desde MySQL:
+#ESQUEMA_TEMP=db_temporales
+#ESQUEMA_TEMP=db_desarrollo2021
 
 #PARAMETROS GENERICOS
 VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_CADENA_JDBC';"`
@@ -76,7 +78,6 @@ fi
 if [ "$AMBIENTE" = "1" ]; then
 	# Cargar Datos desde la base
 	VAL_RUTA=`mysql -N  <<<"select valor from params where entidad = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') AND parametro = 'VAL_RUTA';"` 
-	NAME_SHELL=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'SHELL');"`
 	PESOS_PARAMETROS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'PESOS_PARAMETROS' );"`
 	PESOS_NSE=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'PESOS_NSE' );"`
 	TOPE_RECARGAS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'TOPE_RECARGAS' );"`
@@ -87,17 +88,11 @@ if [ "$AMBIENTE" = "1" ]; then
 	ESQUEMA_TABLA_3=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'ESQUEMA_TABLA_3' );"`
 	VAL_SQL_1=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_1' );"`
 	VAL_SQL_2=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_2' );"`
-	#VAL_FTP_HOSTNAME=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_HOSTNAME';"` 
-	#VAL_FTP_PUERTO=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_PUERTO';"` 
-	#VAL_FTP_USER=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_USER';"` 
-	#VAL_FTP_PASS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_PASS';"` 
-	#VAL_FTP_RUTA=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_RUTA';"` 
-	#VAL_FTP_NOM_ARCHIVO=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_NOM_ARCHIVO';"` 
-	#VAL_DIR_HDFS_CAT=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_DIR_HDFS_CAT';"` 
+	ESQUEMA_TEMP=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_TEMP';"`
+	ESQUEMA_CS_ALTAS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_CS_ALTAS';"` 
 else 
 	# Cargar Datos desde la base
 	VAL_RUTA=`mysql -N  <<<"select valor from params_des where entidad = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') AND parametro = 'VAL_RUTA';"` 
-	NAME_SHELL=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'SHELL');"`
 	PESOS_PARAMETROS=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'PESOS_PARAMETROS' );"`
 	PESOS_NSE=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'PESOS_NSE' );"`
 	TOPE_RECARGAS=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'TOPE_RECARGAS' );"`
@@ -108,13 +103,8 @@ else
 	ESQUEMA_TABLA_3=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'ESQUEMA_TABLA_3' );"`  
 	VAL_SQL_1=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_1' );"`
 	VAL_SQL_2=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_2' );"`
-	#VAL_FTP_HOSTNAME=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_HOSTNAME';"` 
-	#VAL_FTP_PUERTO=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_PUERTO';"` 
-	#VAL_FTP_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_USER';"` 
-	#VAL_FTP_PASS=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_PASS';"` 
-	#VAL_FTP_RUTA=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_RUTA';"` 
-	#VAL_FTP_NOM_ARCHIVO=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_FTP_NOM_ARCHIVO';"` 
-	#VAL_DIR_HDFS_CAT=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'VAL_DIR_HDFS_CAT';"` 
+	ESQUEMA_TEMP=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_TEMP';"` 
+	ESQUEMA_CS_ALTAS=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_CS_ALTAS';"` 
 fi	
 	
  #Verificar si tuvo datos de la base
@@ -189,60 +179,11 @@ HCAT_HOME=/usr/hdp/current/hive-webhcat
 SQOOP_HOME=/usr/hdp/current/sqoop-client
 
 export LIB_JARS=$HCAT_HOME/share/hcatalog/hive-hcatalog-core-${version}.jar,${HIVE_HOME}/lib/hive-metastore-${version}.jar,$HIVE_HOME/lib/libthrift-0.9.3.jar,$HIVE_HOME/lib/hive-exec-${version}.jar,$HIVE_HOME/lib/libfb303-0.9.3.jar,$HIVE_HOME/lib/jdo-api-3.0.1.jar,$SQOOP_HOME/lib/slf4j-api-1.7.7.jar,$HIVE_HOME/lib/hive-cli-${version}.jar
-#------------------------------------------------------
-# DEFINICION DE FUNCIONES
-#------------------------------------------------------
-
-# Guarda los resultados en los archivos de correspondientes y registra las entradas en la base de datos de control    
-function log() #funcion 4 argumentos (tipo, tarea, salida, mensaje)
-{
-	if [ "$#" -lt 4 ]; then
-		echo "Faltan argumentosen el llamado a la funcion"
-		return 1 # Numero de argumentos no completo
-	else
-		if [ "$1" = 'e' -o "$1" = 'E' ]; then
-			TIPOLOG=ERROR
-		else
-			TIPOLOG=INFO
-		fi
-			TAREA="$2"
-				MEN="$4"
-			PASO_EJEC="$5"
-			FECHA=`date +%Y"-"%m"-"%d`
-			HORAS=`date +%H":"%M":"%S`
-			TIME=`date +%a" "%d"/"%m"/"%Y" "%X`
-			MSJ=$(echo " $TIME [$TIPOLOG] Tarea: $TAREA - $MEN ")
-			echo $MSJ >> $LOGS/$EJECUCION_LOG.log
-			# mysql -e "insert into logs values ('$ENTIDAD','$EJECUCION','$TIPOLOG','$FECHA','$HORAS','$TAREA',$3,'$MEN','$PASO_EJEC','$NAME_SHELL')"
-			echo $MSJ
-			return 0
-	fi
-}
-
-
-function stat() #funcion 4 argumentos (Tarea, duracion, fuente, destino)
-{
-	if [ "$#" -lt 4 ]; then
-		echo "Faltan argumentos en el llamado a la funcion"
-		return 1 # Numero de argumentos no completo
-	else
-			TAREA="$1"
-			DURACION="$2"
-			FECHA=`date +%Y"-"%m"-"%d`
-			HORAS=`date +%H":"%M":"%S`
-			TIME=`date +%a" "%d"/"%m"/"%Y" "%X`
-			MSJ=$(echo " $TIME [INFO] Tarea: $TAREA - Duracion : $DURACION ")
-			echo $MSJ >> $LOGS/$EJECUCION_LOG.log
-			# mysql -e "insert into stats values ('$ENTIDAD','$EJECUCION','$TAREA','$FECHA $HORAS','$DURACION',$3,'$4')"
-			echo $MSJ
-			return 0
-	fi
-}
 
 #------------------------------------------------------
 # VERIFICACION INICIAL 
 #------------------------------------------------------
-       
+
 #Verificar si existe la ruta de sistema 
 if ! [ -e "$VAL_RUTA" ]; then
 	((rc=10))
@@ -260,7 +201,7 @@ else
 fi
 
 #VALIDACION DE PARAMETROS INICIALES
-if [ -z "$ENTIDAD" ] || [ -z "$VAL_RUTA" ] || [ -z "$VAL_CADENA_JDBC" ] || [ -z "$VAL_COLA_EJECUCION" ] || [ -z "$VAL_USER" ] ; then
+if [ -z "$ENTIDAD" ] || [ -z "$VAL_USER" ] || [ -z "$VAL_CADENA_JDBC" ] || [ -z "$VAL_COLA_EJECUCION" ] || [ -z "$ESQUEMA_TABLA" ] || [ -z "$ESQUEMA_TABLA_1" ] || [ -z "$ESQUEMA_TABLA_2" ] || [ -z "$ESQUEMA_TABLA_3" ] || [ -z "$VAL_SQL_1" ] || [ -z "$VAL_SQL_2" ] || [ -z "$ESQUEMA_TEMP" ] || [ -z "$ESQUEMA_CS_ALTAS" ] ; then 
 	echo " ERROR - uno de los parametros esta vacio o nulo"
 	exit 1
 fi
@@ -329,7 +270,6 @@ if [ "$PASO" = "0" ]; then
 		if  ! [ -e "$LOGS" ]; then
 		(( rc = 21)) 
 		echo $DIA-$HORA" Error $rc : La ruta $LOGS no pudo ser creada" 
-		log e "CREAR DIRECTORIO LOG" $rc  " $DIA-$HORA' Error $rc: La ruta $LOGS no pudo ser creada'" $PASO	
 		exit $rc
 		fi
 	fi
@@ -342,7 +282,6 @@ if [ "$PASO" = "0" ]; then
 	else
 		(( rc = 22))
 		echo $DIA-$HORA" Error $rc : Fallo al crear el archivo de log $LOGS/$EJECUCION_LOG.log"
-		log e "CREAR ARCHIVO LOG" $rc  " $DIA-$HORA' Error $rc: Fallo al crear el archivo de log $LOGS/$EJECUCION_LOG.log'" $PASO
 		exit $rc
 	fi
 	
@@ -355,7 +294,6 @@ if [ "$PASO" = "0" ]; then
 	else
 		(( rc = 23)) 
 		echo $DIA-$HORA" Error $rc : Fallo al crear el archivo de error $LOGS/$EJECUCION_LOG.log"
-		log e "CREAR ARCHIVO LOG ERROR" $rc  " $DIA-$HORA' Error $rc: Fallo al crear el archivo de error $LOGS/$EJECUCION_LOG.log'" $PASO
 		exit $rc
 	fi
 PASO=2
@@ -367,7 +305,7 @@ fi
 echo "==== Inicia ejecucion del proceso refactoring D_OTC_T_360_GENERAL ===="`date '+%Y%m%d%H%M%S'` >> $LOGS/$EJECUCION_LOG.log
 #Verificar si hay parámetro de re-ejecución
 if [ "$PASO" = "2" ]; then
-	log i "HIVE" $rc  " Ejecucion de la consulta en HIVE"
+	echo "HIVE: $rc Ejecucion de la consulta en HIVE"
  # Inicio del marcado de tiempo para la tarea actual
 	INICIO=$(date +%s)
 	echo "==== Ejecucion D_OTC_T_360_GENERAL_1.sql ====" >> $LOGS/$EJECUCION_LOG.log
@@ -379,17 +317,16 @@ if [ "$PASO" = "2" ]; then
 	
    # Verificacion de creacion tabla external
 	if [ $? -eq 0 ]; then
-		log i "HIVE" $rc  " Fin de creacion e insert en tabla temporales sin dependencia " $PASO
+		echo "HIVE: $rc Fin de creacion e insert en tabla temporales sin dependencia " $PASO
 		else
 		(( rc = 40)) 
-		log e "HIVE" $rc  " Fallo al ejecutar script desde HIVE - Tabla" $PASO
+		echo "HIVE: $rc Fallo al ejecutar script desde HIVE - Tabla" $PASO
 		exit $rc
 	fi	
    
 	FIN=$(date +%s)
 	DIF=$(echo "$FIN - $INICIO" | bc)
 	TOTAL=$(printf '%d:%d:%d\n' $(($DIF/3600)) $(($DIF%3600/60)) $(($DIF%60)))
-	stat "HIVE tablas temporales temp" $TOTAL "0" "0"		
 	PASO=3
 fi	
 
@@ -399,27 +336,26 @@ fi
 #Verificar si hay parámetro de re-ejecución
 if [ "$PASO" = "3" ]; then
 	INICIO=$(date +%s)
-	log i "HIVE" $rc  " INICIO EJECUCION del INSERT en HIVE" $PASO
+	echo "HIVE: $rc INICIO EJECUCION del INSERT en HIVE" $PASO
 	echo "==== Ejecucion D_OTC_T_360_GENERAL_2.sql ====" >> $LOGS/$EJECUCION_LOG.log
 	beeline -u $VAL_CADENA_JDBC -n $VAL_USER --hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
 	--hiveconf hive.auto.convert.sortmerge.join=true --hiveconf hive.optimize.bucketmapjoin=true --hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
 	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fechamas1=${fechamas1} --hivevar FECHAEJE=${FECHAEJE} --hivevar fechamenos1mes=${fechamenos1mes} --hivevar fechamenos2mes=${fechamenos2mes} \
 	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
 	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_vc=${fecha_vc} \
-	--hivevar fecha_eje1=${fecha_eje1} \
-	-f ${VAL_RUTA}/sql/$VAL_SQL_2 >> $LOGS/$EJECUCION_LOG.log &>> $LOGS/$EJECUCION_LOG.log
+	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
+	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo
 		if [ $? -eq 0 ]; then
-			log i "HIVE" $rc  " Finalizacion con EXITO del insert en hive - otc_t_360_general" $PASO
+			echo "HIVE: $rc Finalizacion con EXITO del insert en hive - otc_t_360_general" $PASO
 			else
 			(( rc = 61)) 
-			log e "HIVE" $rc  " Fallo al ejecutar el insert desde HIVE - tabla otc_t_360_general" $PASO
+			echo "HIVE: $rc Fallo al ejecutar el insert desde HIVE - tabla otc_t_360_general" $PASO
 			exit $rc
 		fi
 	  FIN=$(date +%s)
 	DIF=$(echo "$FIN - $INICIO" | bc)
 	TOTAL=$(printf '%d:%d:%d\n' $(($DIF/3600)) $(($DIF%3600/60)) $(($DIF%60)))
-	stat "Insert tabla hive final" $TOTAL 0 0
 PASO=4
 fi
 	
