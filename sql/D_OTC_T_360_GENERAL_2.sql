@@ -424,7 +424,7 @@ LEFT JOIN db_desarrollo2021.tmp_catalogo_id_canal cat_c ON
 LEFT JOIN db_desarrollo2021.tmp_catalogo_id_sub_canal cat_sc ON
 	upper(A1.SUB_CANAL_MOVIMIENTO_MES) = upper(cat_sc.tipo_movimiento)
 LEFT JOIN db_desarrollo2021.tmp_catalogo_id_producto cat_p ON
-	upper(A1.SUB_MOVIMIENTO) = upper(cat_p.tipo_movimiento)
+	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
 LEFT JOIN db_desarrollo2021.tmp_catalogo_id_tipo_movimiento cat_tm ON
-	(cat_tm.nombre_id='ID_TIPO_MOVIMIENTO')
+	upper(A1.tipo) = upper(cat_tm.auxiliar)
 ;
