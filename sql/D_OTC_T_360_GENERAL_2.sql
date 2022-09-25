@@ -12,9 +12,9 @@ SET
 hive.vectorized.execution.reduce.enabled = FALSE;
 
 --tabla temporal para obtener el ultimo descuento por min
-DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.TMP_DESCUENTOS_PLANES;
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES;
 
-CREATE TABLE ${ESQUEMA_TEMP}.TMP_DESCUENTOS_PLANES AS 
+CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES AS 
 SELECT
 	*
 FROM
@@ -32,9 +32,9 @@ FROM
 WHERE
 	rn = 1;
 -- CREACION DE TABLA TEMPORAL PARA DESPACHOS
-DROP TABLE ${ESQUEMA_TEMP}.tmp_despachos;
+DROP TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final;
 
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_despachos AS
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final AS
 	SELECT
 		*
 FROM
@@ -45,8 +45,8 @@ WHERE
         upper(operadora) = 'MOVISTAR'
 ;
 --TABLA TEMPORAL PARA id_canal DESDE otc_t_catalogo_consolidado_id
-DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_canal;
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_canal AS 
+DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal AS 
 SELECT
 	*
 FROM
@@ -56,8 +56,8 @@ WHERE
 	AND upper(nombre_id)= UPPER('ID_CANAL');
 
 --TABLA TEMPORAL PARA id_sub_canal DESDE otc_t_catalogo_consolidado_id
-DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_sub_canal;
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_sub_canal AS 
+DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal AS 
 SELECT
 	*
 FROM
@@ -67,8 +67,8 @@ WHERE
 	AND upper(nombre_id)= UPPER('ID_SUBCANAL');
 
 --TABLA TEMPORAL PARA id_producto DESDE otc_t_catalogo_consolidado_id
-DROP TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_producto;
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_catalogo_id_producto AS 
+DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto AS 
 SELECT
 	*
 FROM
@@ -78,8 +78,8 @@ WHERE
 	AND upper(nombre_id)= UPPER('ID_PRODUCTO');
 
 --TABLA TEMPORAL PARA id_tipo_movimiento DESDE otc_t_catalogo_consolidado_id
-drop table ${ESQUEMA_TEMP}.tmp_catalogo_id_tipo_movimiento;
-create table ${ESQUEMA_TEMP}.tmp_catalogo_id_tipo_movimiento as 
+drop table ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_tipo_mov;
+create table ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_tipo_mov as 
 select 
 id_tipo_movimiento
 , nombre_id
@@ -117,15 +117,16 @@ and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
 
 
 -- tabla temporal para inclusion de SOLICITUDES DE PORTABILIDAD
-DROP TABLE ${ESQUEMA_TEMP}.tmp_solic_port_in;
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_solic_port_in AS
+DROP TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
 	SELECT *
-	FROM db_desarrollo2021.r_om_portin_co --cambiar
+	--LA SIGUIENTE TABLA FUE TRAIDA DESDE ORACLE CON SPARK CON EL QUERY DE CARLOS CASTILLO
+	FROM db_desarrollo2021.r_om_portin_co --cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
 	--WHERE FVC >= ${fecha_vc} 
 ; 
 -- CREATED whEN < MES ANALISI 
 INSERT
-	overwrite TABLE db_desarrollo2021.otc_t_360_general_rf PARTITION(fecha_proceso)
+	overwrite TABLE db_desarrollo2021.d_otc_t_360_general PARTITION(fecha_proceso)
 SELECT
 	DISTINCT 
 t1.telefono
@@ -193,7 +194,8 @@ t1.telefono
 	, t1.fecha_ultima_renovacion_jn
 	, t1.fecha_ultimo_cambio_plan
 	, t1.tipo_movimiento_mes
-	, t1.fecha_movimiento_mes
+	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
+	, nvl(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes)
 	, t1.es_parque
 	, t1.banco
 	, t1.parque_recargador
@@ -234,10 +236,11 @@ t1.telefono
 	--, A2.NUEVO_SUB_CANAL_CAMBIO_PLAN
 	, A2.DISTRIBUIDOR_CAMBIO_PLAN
 	, A2.OFICINA_CAMBIO_PLAN
-	, A2.CODIGO_PLAN_ANTERIOR
-	, A2.DESCRIPCION_PLAN_ANTERIOR
-	, A2.TARIFA_OV_PLAN_ANT
-	, A2.DESCUENTO_TARIFA_PLAN_ANT
+	, A2.COD_PLAN_ANTERIOR
+	, A2.DES_PLAN_ANTERIOR
+	--nvl aniadido en REFACTORING para agregar descuentos al resto de movimientos
+	, nvl(descu.discount_value, A2.TB_DESCUENTO)
+	, A2.TB_OVERRIDE
 	, A2.DELTA
 	, A1.CANAL_MOVIMIENTO_MES
 	, A1.SUB_CANAL_MOVIMIENTO_MES
@@ -361,7 +364,7 @@ THEN NULL
 	, A2.CLIENTE_ANTERIOR
 	, A2.DIAS_RECICLAJE
 	, A2.FECHA_BAJA_RECICLADA
-	, A2.DESCRIPCION_PLAN_ANTERIOR AS NOMBRE_PLAN_ANTERIOR
+	, A2.DES_PLAN_ANTERIOR AS NOMBRE_PLAN_ANTERIOR
 	, A2.TARIFA_BASICA_ANTERIOR
 	, A2.FECHA_INICIO_PLAN_ANTERIOR
 	, A2.TARIFA_FINAL_PLAN_ACT
@@ -381,11 +384,16 @@ LEFT JOIN db_desarrollo2021.otc_t_360_parque_1_tmp_t_mov A2
 ON
 	(t1.TELEFONO = A2.NUM_TELEFONICO)
 	AND (t1.LINEA_NEGOCIO = a2.LINEA_NEGOCIO)
-	-----------TABLA SECUNDARIA GENERADA EN MOVI PARQUE:   CONTIENE RESULTADO DE UNIONS
+--PARA INCLUIR mines NO RECICLABLE
+--LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A11 
+--ON
+--	(t1.TELEFONO = A11.TELEFONO)
+--	AND ('NO_RECICLABLE'= upper(A11.TIPO))
+-----------TABLA SECUNDARIA GENERADA EN MOVI PARQUE:   CONTIENE RESULTADO DE UNIONS
 LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A1 
 ON
 	(t1.TELEFONO = A1.TELEFONO)
-	AND (t1.fecha_movimiento_mes = A1.fecha_movimiento_mes)
+	--AND (t1.fecha_movimiento_mes = A1.fecha_movimiento_mes)
 LEFT JOIN db_temporales.otc_t_cuenta_num_tmp A3 
 ON
 	(t1.account_num = A3.cta_fact)
@@ -413,18 +421,18 @@ LEFT JOIN db_temporales.tmp_fecha_nacimiento_mvp cs ON
 LEFT JOIN db_reportes.otc_t_360_modelo TEC ON
 	t1.TELEFONO = TEC.num_telefonico
 	AND (${FECHAEJE} = TEC.fecha_proceso)
-LEFT JOIN db_desarrollo2021.TMP_DESCUENTOS_PLANES DESCU ON
+LEFT JOIN db_desarrollo2021.TMP_OTC_T_DESC_PLANES DESCU ON
 	t1.TELEFONO = DESCU.phone_number
-LEFT JOIN db_desarrollo2021.tmp_despachos desp ON
+LEFT JOIN db_desarrollo2021.tmp_desp_nc_final desp ON
 	A1.icc = desp.icc
-LEFT JOIN ${ESQUEMA_TEMP}.tmp_SOLIC_PORT_IN SPI ON
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in SPI ON
 	t1.TELEFONO = SPI.telefono
-LEFT JOIN db_desarrollo2021.tmp_catalogo_id_canal cat_c ON
+LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_canal cat_c ON
 	upper(A1.CANAL_COMERCIAL) = upper(cat_c.tipo_movimiento)
-LEFT JOIN db_desarrollo2021.tmp_catalogo_id_sub_canal cat_sc ON
+LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_sub_canal cat_sc ON
 	upper(A1.SUB_CANAL_MOVIMIENTO_MES) = upper(cat_sc.tipo_movimiento)
-LEFT JOIN db_desarrollo2021.tmp_catalogo_id_producto cat_p ON
+LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_producto cat_p ON
 	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
-LEFT JOIN db_desarrollo2021.tmp_catalogo_id_tipo_movimiento cat_tm ON
-	upper(A1.tipo) = upper(cat_tm.auxiliar)
+LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_tipo_mov cat_tm ON
+	upper(A1.tipo) = upper(cat_tm.auxiliar)--ojo puede ser por esto el alta_baja_reproces ERROR
 ;
