@@ -1,6 +1,8 @@
 ------------------------------------------------------
 --EJECUCION DE CONSULTA EN HIVE (INSERTAR QUERY)
 ------------------------------------------------------
+SET
+hive.exec.dynamic.partition = nonstrict;
 
 SET
 hive.cli.print.header = FALSE;

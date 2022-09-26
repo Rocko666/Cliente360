@@ -12,7 +12,7 @@
 #------------------------------------------------------
 # VARIABLES CONFIGURABLES POR PROCESO (MODIFICAR)
 #------------------------------------------------------
-#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220920 3
+#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220924 3
 # ENT. ANTERIOR ----> ENTIDAD=OTC_T_360_GENERAL
 ENTIDAD=D_OTC_T_360_GENERAL
 # AMBIENTE (1=produccion, 0=desarrollo)
