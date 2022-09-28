@@ -362,122 +362,187 @@ SELECT
 	, DOCUMENTO_CLIENTE_ANT
 	, DIAS
 	, FECHA_BAJA
-	----------------------------------------------MODIFICADO FORMATO FECHA YYYY-MM-DD
+	------------MODIFICADO FORMATO FECHA YYYY-MM-DD
 FROM
 	${ESQUEMA_CS_ALTAS}.no_reciclable
 WHERE
 	FECHA_PROCESO = '${fecha_movimientos}'
 	AND marca = 'TELEFONICA';
+-----------------------********************************-------------------------------
 ------------------------PROCESO ALTAS BAJAS REPROCESO---------------------------------
 -----------------------********************************-------------------------------
----TABLA QUE ALMACENA LAS ALTAS DE TODOS LOS DIAS 
+---TABLA QUE ALMACENA LAS ALTAS DE TODOS LOS DIAS (particiones)
 --PARA UN DETERMINADO MES DE ANALISIS: tmp_altas_ttls_mes 
-drop table if exists db_desarrollo2021.tmp_altas_ttls_mes;
-create table db_desarrollo2021.tmp_altas_ttls_mes  as 
-select distinct
-telefono 
-,linea_negocio 
-,account_num	
-,fecha_alta	
-,cliente	
-,documento_cliente
-,nombre_plan	
-,icc	
-,fecha_proceso	as fecha_baja
-,domain_login_ow	
-,nombre_usuario_ow	
-,domain_login_sub	
-,nombre_usuario_sub	
-,canal	
-,distribuidor	
-,oficina	
-,portabilidad	
-,forma_pago	
-,cod_da	
-,nom_usuario	
-,canal_comercial	
-,campania	
-,codigo_distribuidor	
-,nom_distribuidor	
-,codigo_plaza	
-,nom_plaza	
-,region	
-,sub_canal		
-from  db_cs_altas.otc_t_altas_bi
--- el between debe ser siempre desde 02 del mes analisis hasta fecha eje dia 
-where p_FECHA_PROCESO BETWEEN ${f_inicio_abr} AND ${f_fin_abr}
-AND marca = 'TELEFONICA';
+DROP TABLE IF EXISTS db_desarrollo2021.tmp_altas_ttls_mes;
 
+CREATE TABLE db_desarrollo2021.tmp_altas_ttls_mes AS 
+SELECT
+	DISTINCT
+telefono
+	, linea_negocio
+	, account_num
+	, fecha_alta
+	, cliente
+	, documento_cliente
+	, nombre_plan
+	, icc
+	, fecha_proceso AS fecha_baja
+	, domain_login_ow
+	, nombre_usuario_ow
+	, domain_login_sub
+	, nombre_usuario_sub
+	, canal
+	, distribuidor
+	, oficina
+	, portabilidad
+	, forma_pago
+	, cod_da
+	, nom_usuario
+	, canal_comercial
+	, campania
+	, codigo_distribuidor
+	, nom_distribuidor
+	, codigo_plaza
+	, nom_plaza
+	, region
+	, sub_canal
+	, operadora_origen
+	, imei
+	, equipo
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, codigo_usuario
+	, calf_riesgo
+	, cap_endeu
+	, valor_cred
+FROM
+	db_cs_altas.otc_t_altas_bi
+	-- el between debe ser siempre desde 02 del mes analisis hasta fecha eje dia 
+WHERE
+	p_FECHA_PROCESO BETWEEN '${f_inicio_abr}' AND '${f_fin_abr}'
+	AND marca = 'TELEFONICA';
 --- TABLA QUE ALMACENA LOS TELEFONOS DE LOS MOVIMIENTOS:
 ---ALTAS, TRANSFER IN, TRANSFER OUT, CAMBIOS DE PLAN, A MES CAIDO,(O FECHA EJE +1)
 ---SE TENDRA UNA INFORMACION REAL A MES CAIDO
----DENOMINADOS MOVIMIENTOS EFECTIVOS: tmp_movimientos_efectivos
-drop table db_desarrollo2021.tmp_movimientos_efctvs;
-CREATE TABLE db_desarrollo2021.tmp_movimientos_efctvs as 
-select distinct
-telefono 
-from  db_cs_altas.otc_t_altas_bi
-where p_FECHA_PROCESO = ${f_efectiva} AND marca = 'TELEFONICA'
-union ALL SELECT distinct
-telefono 
-from  db_cs_altas.otc_t_transfer_in_bi
-where p_FECHA_PROCESO = ${f_efectiva} AND marca = 'TELEFONICA'
-union ALL SELECT distinct
-telefono 
-from  db_cs_altas.otc_t_transfer_OUT_bi
-where p_FECHA_PROCESO = ${f_efectiva}  AND marca = 'TELEFONICA'
-union ALL SELECT distinct
-telefono 
-from  db_cs_altas.otc_t_cambio_plan_bi
-where p_FECHA_PROCESO = ${f_efectiva} AND marca = 'TELEFONICA'; 
+---DENOMINADOS MOVIMIENTOS EFECTIVOS: tmp_movimientos_efctvs
+DROP TABLE db_desarrollo2021.tmp_movimientos_efctvs;
 
+CREATE TABLE db_desarrollo2021.tmp_movimientos_efctvs AS 
+SELECT
+	DISTINCT
+telefono
+FROM
+	db_cs_altas.otc_t_altas_bi
+WHERE
+	p_FECHA_PROCESO = '${f_efectiva}'
+	AND marca = 'TELEFONICA'
+UNION ALL
+SELECT
+	DISTINCT
+telefono
+FROM
+	db_cs_altas.otc_t_transfer_in_bi
+WHERE
+	p_FECHA_PROCESO = '${f_efectiva}'
+	AND marca = 'TELEFONICA'
+UNION ALL
+SELECT
+	DISTINCT
+telefono
+FROM
+	db_cs_altas.otc_t_transfer_OUT_bi
+WHERE
+	p_FECHA_PROCESO = '${f_efectiva}'
+	AND marca = 'TELEFONICA'
+UNION ALL
+SELECT
+	DISTINCT
+telefono
+FROM
+	db_cs_altas.otc_t_cambio_plan_bi
+WHERE
+	p_FECHA_PROCESO = '${f_efectiva}'
+	AND marca = 'TELEFONICA';
 --TABLA DE ALTAS BAJAS REPROCESO 
-delete from db_desarrollo2021.abr_altas_bajas_reproceso 
-where tipo ='ALTAS_BAJAS_REPROCESO'
---AND FECHA_proceso BETWEEN '${f_inicio}' AND '${fecha_proceso}';
-AND FECHA_alta >= '${f_inicio}';
-INSERT INTO db_desarrollo2021.abr_altas_bajas_reproceso 
-select 
-telefono 
-,cliente
-,fecha_alta	
-,fecha_baja
-,portabilidad
-, (case 
-		when linea_negocio like '%H%BRIDO%' THEN 'POSPAGO'
-		when linea_negocio like '%POSPAGO%' THEN 'POSPAGO'
-		ELSE linea_negocio END) AS linea_negocio
-, 'ALTAS_BAJAS_REPROCESO' as tipo
-, 'ALTAS BAJAS REPROCESO' AS SUB_MOVIMIENTO
-,account_num	
-,documento_cliente
-,nombre_plan	
-,icc	
-,domain_login_ow	
-,nombre_usuario_ow	
-,domain_login_sub	
-,nombre_usuario_sub	
-,canal	
-,distribuidor	
-,oficina	
-,forma_pago	
-,cod_da	
-,nom_usuario	
-,canal_comercial	
-,campania	
-,codigo_distribuidor	
-,nom_distribuidor	
-,codigo_plaza	
-,nom_plaza	
-,region	
-,sub_canal
-from (select atm.*
-,row_number() over(partition by atm.telefono, atm.fecha_alta,  atm.linea_negocio
-order by atm.fecha_baja desc) as rnum
-from  db_desarrollo2021.tmp_altas_ttls_mes atm
-where atm.telefono not in (select me.telefono from db_desarrollo2021.tmp_movimientos_efctvs me)
+DELETE
+FROM
+	db_desarrollo2021.OTC_T_ALTA_BAJA_REPROCESO_HIST
+WHERE
+	tipo = 'ALTAS_BAJAS_REPROCESO'
+	--AND FECHA_proceso BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	AND FECHA_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
+INSERT
+	INTO
+	db_desarrollo2021.OTC_T_ALTA_BAJA_REPROCESO_HIST 
+SELECT
+	telefono
+	, cliente
+	, fecha_alta
+	, fecha_baja
+	, portabilidad
+	, (CASE 
+		WHEN linea_negocio LIKE '%H%BRIDO%' THEN 'POSPAGO'
+		WHEN linea_negocio LIKE '%POSPAGO%' THEN 'POSPAGO'
+		ELSE linea_negocio
+	END) AS linea_negocio
+	, 'ALTAS_BAJAS_REPROCESO' AS tipo
+	, 'ALTAS BAJAS REPROCESO' AS SUB_MOVIMIENTO
+	, account_num
+	, documento_cliente
+	, nombre_plan
+	, icc
+	, domain_login_ow
+	, nombre_usuario_ow
+	, domain_login_sub
+	, nombre_usuario_sub
+	, canal
+	, distribuidor
+	, oficina
+	, forma_pago
+	, cod_da
+	, nom_usuario
+	, canal_comercial
+	, campania
+	, codigo_distribuidor
+	, nom_distribuidor
+	, codigo_plaza
+	, nom_plaza
+	, region
+	, sub_canal
+	, operadora_origen
+	, imei
+	, equipo
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, codigo_usuario
+	, calf_riesgo
+	, cap_endeu
+	, valor_cred
+FROM
+	(
+	SELECT
+		atm.*
+		, ROW_NUMBER() OVER(PARTITION BY atm.telefono
+		, atm.fecha_alta
+		, atm.linea_negocio
+	ORDER BY
+		atm.fecha_baja DESC) AS rnum
+	FROM
+		db_desarrollo2021.tmp_altas_ttls_mes atm
+	WHERE
+		atm.telefono NOT IN (
+		SELECT
+			me.telefono
+		FROM
+			db_desarrollo2021.tmp_movimientos_efctvs me)
 ) tt
-where rnum=1;
+WHERE
+	rnum = 1;
 
 --OBTIENE EL ULTIMO EVENTO DEL ALTA EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.OTC_T_ALTA_HIST_UNIC;
@@ -1044,62 +1109,7 @@ FROM
     ) XX
 WHERE
 	XX.rnum = 1;
---OBTIENE EL ÛŒTIMO EVENTO NO_RECICLABLE  EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
-DROP TABLE ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST_UNIC;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST_UNIC AS
-SELECT
-	XX.TIPO
-	, XX.SUB_MOVIMIENTO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.ICC
-	, XX.DISTRIBUIDOR
-	, XX.PORTABILIDAD
-	, XX.COD_DA
-	, XX.CANAL_COMERCIAL
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.NOM_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.RUC_DISTRIBUIDOR
-	, XX.FECHA_BAJA
-FROM
-	(
-	SELECT
-		AA.TIPO
-		, AA.SUB_MOVIMIENTO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.ICC
-		, AA.DISTRIBUIDOR
-		, AA.PORTABILIDAD
-		, AA.COD_DA
-		, AA.CANAL_COMERCIAL
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.NOM_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.RUC_DISTRIBUIDOR
-		, AA.FECHA_BAJA
-		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TIPO
-		, aa.TELEFONO
-	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
-	FROM
-		${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST AS AA
-	WHERE
-		FECHA < '${fecha_movimientos}'
-		--AND TIPO = 'ALTAS_BAJAS_REPROCESO'
-    ) XX
-WHERE
-	XX.rnum = 1;
 --REALIZAMOS EL CRUCE CON CADA TABLA USANDO LA TABLA PIVOT (TABLA RESULTANTE DE PIVOT_PARQUE) 
 --Y AGREANDO LOS CAMPOS DE CADA TABLA RENOMBRANDOLOS DE ACUERDO AL MOVIMIENTO QUE CORRESPONDA.
 --ESTA ES LA PRIMERA TABLA RESULTANTE QUE SERVIRA PARA ALIMENTAR LA ESTRUCTURA OTC_T_360_GENERAL.
@@ -1189,7 +1199,7 @@ SELECT
 	, E.FECHA_INICIO_PLAN_ANTERIOR
 	, E.TARIFA_FINAL_PLAN_ACT
 	, E.TARIFA_FINAL_PLAN_ANT
-	, G.FECHA AS FECHA_MOVIMIENTO_BAJA
+	, nvl(G.FECHA,abr.fecha_baja) AS FECHA_MOVIMIENTO_BAJA
 	, G.MOTIVO
 	, G.VOL_INVOL
 	, (CASE WHEN C.FECHA IS NOT NULL THEN
@@ -1257,6 +1267,9 @@ LEFT JOIN ${ESQUEMA_TABLA}.otc_t_no_reciclable_hist_unic AS B
 	--AND (LINEA_NEGOCIO_BAJA <> 'PREPAGO') --insertado en RF
 	--LEFT JOIN ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST_UNIC AS F 
 	--ON (NUM_TELEFONICO = F.TELEFONO)
+LEFT JOIN ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST AS abr 
+    ON 
+	(NUM_TELEFONICO = abr.TELEFONO)
     ;
 --CREAMOS TABLA TEMPORAL UNION PARA OBTENER ULTIMO MOVIMIENTO DEL MES POR NUM_TELEFONO
 DROP TABLE ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2;
@@ -1565,14 +1578,14 @@ FROM
 		SELECT
 			TIPO
 			, TELEFONO
-			, FECHA
-			, CAST(NULL AS STRING) AS CANAL
-			, CAST(NULL AS STRING) AS SUB_CANAL
+			, fecha_baja as FECHA
+			, CANAL
+			, SUB_CANAL
 			, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
 			, DISTRIBUIDOR
-			, CAST(NULL AS STRING) AS OFICINA
+			, OFICINA
 			, PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
+			, OPERADORA_ORIGEN
 			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
 			, CAST(NULL AS STRING) AS MOTIVO
 			, CAST(NULL AS STRING) AS COD_PLAN_ANTERIOR
@@ -1582,28 +1595,28 @@ FROM
 			, CAST(NULL AS DOUBLE) AS DELTA
 			----------------------------------------------------------
 			, SUB_MOVIMIENTO
-			, CAST(NULL AS STRING) AS IMEI
-			, CAST(NULL AS STRING) AS EQUIPO
+			, IMEI
+			, EQUIPO
 			, ICC
-			, CAST(NULL AS STRING) AS DOMAIN_LOGIN_OW
-			, CAST(NULL AS STRING) AS NOMBRE_USUARIO_OW
-			, CAST(NULL AS STRING) AS DOMAIN_LOGIN_SUB
-			, CAST(NULL AS STRING) AS NOMBRE_USUARIO_SUB
-			, CAST(NULL AS STRING) AS FORMA_PAGO
-			, CAST(NULL AS STRING) AS EJECUTIVO_ASIGNADO_PTR
-			, CAST(NULL AS STRING) AS AREA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_VENDEDOR_DA_PTR
-			, CAST(NULL AS STRING) AS JEFATURA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_USUARIO
-			, CAST(NULL AS STRING) AS CALF_RIESGO
-			, CAST(NULL AS STRING) AS CAP_ENDEU
-			, CAST(NULL AS INT) AS VALOR_CRED
+			, DOMAIN_LOGIN_OW
+			, NOMBRE_USUARIO_OW
+			, DOMAIN_LOGIN_SUB
+			, NOMBRE_USUARIO_SUB
+			, FORMA_PAGO
+			, EJECUTIVO_ASIGNADO_PTR
+			, AREA_PTR
+			, CODIGO_VENDEDOR_DA_PTR
+			, JEFATURA_PTR
+			, CODIGO_USUARIO
+			, CALF_RIESGO
+			, CAP_ENDEU
+			, VALOR_CRED
 			, CAST(NULL AS STRING) AS CIUDAD_USUARIO
 			, CAST(NULL AS STRING) AS PROVINCIA_USUARIO
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST_UNIC
+			${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			FECHA_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 			-----------------------*************************-----------------
 	UNION ALL
 		SELECT
@@ -1841,6 +1854,6 @@ LEFT JOIN ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP AS A ON
 	(NUM_TELEFONICO = A.TELEFONO)
 	AND B.FECHA_MOVIMIENTO_MES = A.FECHA_MOVIMIENTO_MES;
 ----- PROCESO
---sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_MOVIMIENTOS_PARQUE.sh 20220924
+--sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_MOVIMIENTOS_PARQUE.sh 20220927
 ----- REPROCESO
 --sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_MOVIMIENTOS_PARQUE.sh 20220801 2
