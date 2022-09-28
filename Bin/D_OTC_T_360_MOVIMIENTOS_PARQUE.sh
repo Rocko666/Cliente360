@@ -124,11 +124,9 @@ VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_P
 VAL_COLA_EJECUCION=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_COLA_EJECUCION';"`
 VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_OTC_T_360_MOVIMIENTOS_PARQUE' AND parametro = 'VAL_USER';"`
 
-
 #------------------------------------------------------
 # VERIFICACION INICIAL 
 #------------------------------------------------------
-
 #Verificar si existe la ruta de sistema 
 if ! [ -e "$VAL_RUTA" ]; then
 	((rc=10))
@@ -149,16 +147,24 @@ fi
 #------------------------------------------------------
 fecha_proceso=`date -d "$FECHAEJE" "+%Y-%m-%d"`
 f_check=`date -d "$FECHAEJE" "+%d"`
-fecha_movimientos=`date '+%Y-%m-%d' -d "$fecha_proceso+1 day"` # para tipo de dato DATE
-fecha_movimientos_cp=`date '+%Y%m%d' -d "$fecha_proceso+1 day"` # para las tablas particionadas
+ # para tipo de dato DATE
+fecha_movimientos=`date '+%Y-%m-%d' -d "$fecha_proceso+1 day"`
+ # para las tablas particionadas
+fecha_movimientos_cp=`date '+%Y%m%d' -d "$fecha_proceso+1 day"`
 fecha_mes_ant_cp=`date -d "$FECHAEJE" "+%Y%m01"`
 fecha_mes_desp=`date -d "$FECHAEJE-1 month" "+%Y%m"`
 fecha_mes_ant=`date -d "$FECHAEJE" "+%Y-%m-01"`
 
 if [ $f_check == "01" ]; then
 	f_inicio=`date -d "$FECHAEJE -1 days" "+%Y-%m-01"`
+	f_inicio_abr=`date -d "$FECHAEJE -1 days" "+%Y%m02"`
+	f_fin_abr=`date -d "$FECHAEJE -1 days" "+%Y%m%d"`
+	f_efectiva=`date -d "$FECHAEJE" "+%Y%m%d"`
 else
 	f_inicio=`date -d "$FECHAEJE" "+%Y-%m-01"`
+	f_inicio_abr=`date -d "$FECHAEJE" "+%Y%m02"`
+	f_fin_abr=`date -d "$FECHAEJE" "+%Y%m%d"`
+	f_efectiva=`date -d "$FECHAEJE+1 day" "+%Y%m%d"`
 echo $f_inicio
 fi
 
