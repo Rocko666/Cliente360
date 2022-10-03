@@ -373,9 +373,9 @@ WHERE
 -----------------------********************************-------------------------------
 ---TABLA QUE ALMACENA LAS ALTAS DE TODOS LOS DIAS (particiones)
 --PARA UN DETERMINADO MES DE ANALISIS: tmp_altas_ttls_mes 
-DROP TABLE IF EXISTS db_desarrollo2021.tmp_altas_ttls_mes;
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_altas_ttls_mes;
 
-CREATE TABLE db_desarrollo2021.tmp_altas_ttls_mes AS 
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_altas_ttls_mes AS 
 SELECT
 	DISTINCT
 telefono
@@ -418,65 +418,66 @@ telefono
 	, cap_endeu
 	, valor_cred
 FROM
-	db_cs_altas.otc_t_altas_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
 	-- el between debe ser siempre desde 02 del mes analisis hasta fecha eje dia 
+	-- p_fecha_proceso no puede tomar el valor del dia 1, ya que es cierre de mes 
 WHERE
-	p_FECHA_PROCESO BETWEEN '${f_inicio_abr}' AND '${f_fin_abr}'
+	p_fecha_proceso BETWEEN '${f_inicio_abr}' AND '${f_fin_abr}'
 	AND marca = 'TELEFONICA';
 --- TABLA QUE ALMACENA LOS TELEFONOS DE LOS MOVIMIENTOS:
 ---ALTAS, TRANSFER IN, TRANSFER OUT, CAMBIOS DE PLAN, A MES CAIDO,(O FECHA EJE +1)
----SE TENDRA UNA INFORMACION REAL A MES CAIDO
+---SE TENDRA UNA INFORMACION REAL A MES CAIDO ej: yyyymm31
 ---DENOMINADOS MOVIMIENTOS EFECTIVOS: tmp_movimientos_efctvs
-DROP TABLE db_desarrollo2021.tmp_movimientos_efctvs;
+DROP TABLE ${ESQUEMA_TEMP}.tmp_movimientos_efctvs;
 
-CREATE TABLE db_desarrollo2021.tmp_movimientos_efctvs AS 
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_movimientos_efctvs AS 
 SELECT
 	DISTINCT
 telefono
 FROM
-	db_cs_altas.otc_t_altas_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
 WHERE
-	p_FECHA_PROCESO = '${f_efectiva}'
+	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
 	DISTINCT
 telefono
 FROM
-	db_cs_altas.otc_t_transfer_in_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_transfer_in_bi
 WHERE
-	p_FECHA_PROCESO = '${f_efectiva}'
+	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
 	DISTINCT
 telefono
 FROM
-	db_cs_altas.otc_t_transfer_OUT_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_transfer_OUT_bi
 WHERE
-	p_FECHA_PROCESO = '${f_efectiva}'
+	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
 	DISTINCT
 telefono
 FROM
-	db_cs_altas.otc_t_cambio_plan_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_cambio_plan_bi
 WHERE
-	p_FECHA_PROCESO = '${f_efectiva}'
+	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA';
 --TABLA DE ALTAS BAJAS REPROCESO 
 DELETE
 FROM
-	db_desarrollo2021.OTC_T_ALTA_BAJA_REPROCESO_HIST
+	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST
 WHERE
-	tipo = 'ALTAS_BAJAS_REPROCESO'
+	tipo = 'ALTA_BAJA'
 	--AND FECHA_proceso BETWEEN '${f_inicio}' AND '${fecha_proceso}';
 	AND FECHA_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}';
 
 INSERT
 	INTO
-	db_desarrollo2021.OTC_T_ALTA_BAJA_REPROCESO_HIST 
+	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST 
 SELECT
 	telefono
 	, cliente
@@ -488,8 +489,8 @@ SELECT
 		WHEN linea_negocio LIKE '%POSPAGO%' THEN 'POSPAGO'
 		ELSE linea_negocio
 	END) AS linea_negocio
-	, 'ALTAS_BAJAS_REPROCESO' AS tipo
-	, 'ALTAS BAJAS REPROCESO' AS SUB_MOVIMIENTO
+	, 'ALTA_BAJA' AS tipo
+	, 'ALTA BAJA REPROCESO' AS SUB_MOVIMIENTO
 	, account_num
 	, documento_cliente
 	, nombre_plan
@@ -1154,7 +1155,10 @@ SELECT
 	, A.PORTABILIDAD
 	, A.OPERADORA_ORIGEN
 	, A.OPERADORA_DESTINO
-	--  ,  A.MOTIVO
+	---nvl aniadido en REFACTORING, AL MOMENTO LA LINEA COMENTADA DE ABAJO 
+	--- SOLO TRAE NULLS Y VACIOS, CON ESTE CAMBIO SE INCLUYEN LOS DE BAJAS 
+	--,A.MOTIVO
+	, NVL(G.MOTIVO, A.MOTIVO) AS MOTIVO
 	, C.FECHA AS FECHA_PRE_POS
 	, C.CANAL AS CANAL_PRE_POS
 	, C.SUB_CANAL AS SUB_CANAL_PRE_POS
@@ -1175,9 +1179,10 @@ SELECT
 	, E.OFICINA AS OFICINA_CAMBIO_PLAN
 	, E.COD_PLAN_ANTERIOR
 	, E.DES_PLAN_ANTERIOR 
-	, E.TB_DESCUENTO --AS TARIFA_OV_PLAN_ANT
-	, E.TB_OVERRIDE --AS DESCUENTO_TARIFA_PLAN_ANT
+	, E.TB_DESCUENTO 
+	, E.TB_OVERRIDE 
 	, E.DELTA
+	-----------\/\/\/\/\/\/\/\/\/\/\/\/------------
 	-----------INSERTADO EN REFACTORING------------
 	, A.CIUDAD
 	, A.PROVINCIA AS PROVINCIA_ACTIVACION
@@ -1189,7 +1194,7 @@ SELECT
 	, (CASE 
 		WHEN UPPER(B.LINEA_NEGOCIO_BAJA) LIKE 'POSPAGO VPN' THEN 'POSPAGO'
 		WHEN UPPER(B.LINEA_NEGOCIO_BAJA) LIKE '%H%BRIDO%' THEN 'POSPAGO'
-		ELSE B.LINEA_NEGOCIO_BAJA END)
+		ELSE UPPER(B.LINEA_NEGOCIO_BAJA) END)
 		AS LINEA_DE_NEGOCIO_ANTERIOR
 	, B.DOCUMENTO_CLIENTE_ANT AS CLIENTE_ANTERIOR
 	, B.DIAS AS DIAS_RECICLAJE
@@ -1199,8 +1204,9 @@ SELECT
 	, E.FECHA_INICIO_PLAN_ANTERIOR
 	, E.TARIFA_FINAL_PLAN_ACT
 	, E.TARIFA_FINAL_PLAN_ANT
+	--NVL ANIADIDO PARA INCLUIR LA FECHA DE BAJA DE LAS ALTAS_BAJAS_REPROCESO
+	--, G.FECHA as  FECHA_MOVIMIENTO_BAJA
 	, nvl(G.FECHA,abr.fecha_baja) AS FECHA_MOVIMIENTO_BAJA
-	, G.MOTIVO
 	, G.VOL_INVOL
 	, (CASE WHEN C.FECHA IS NOT NULL THEN
 		(CASE 
@@ -1218,11 +1224,29 @@ SELECT
 		END)END) AS DIAS_EN_PARQUE_PREPAGO
 	, (CASE WHEN E.FECHA_INICIO_PLAN_ANTERIOR IS NULL AND E.FECHA > A.FECHA
 		THEN datediff(E.FECHA, A.FECHA)ELSE datediff(E.FECHA, E.FECHA_INICIO_PLAN_ANTERIOR)END) AS DIAS_EN_PARQUE
-	--------------xxxxxxxxxxxxxx-----------------
+	--------------FIN REFACTORING-----------------
+	-----_______/\/\/\/\/\/\/\/\/\/\/\_____----
 	--check! CAMBIO EN RF ${ESQUEMA_TEMP}POR db_temporales,   cambiar en produccion
-	--se ha cambiado el esquema y tabla inferior db_temporales.${TABLA_PIVOTANTE} por db_desarrollo2021.pivot_movi_parque 
 FROM
 	db_temporales.${TABLA_PIVOTANTE} AS Z
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_alta_hist_unic AS A 
+    ON
+	(Z.NUM_TELEFONICO = A.TELEFONO)
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic AS C 
+    ON
+	(Z.NUM_TELEFONICO = C.TELEFONO)
+	AND (Z.linea_negocio_homologado <> 'PREPAGO')
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic AS D 
+    ON
+	(Z.NUM_TELEFONICO = D.TELEFONO)
+	AND (Z.linea_negocio_homologado = 'PREPAGO')
+	-- LINEA_NEGOCIO_HOMOLOGADO SOLO ES PREPAGO  ,   POSPAGO O HOME
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic AS E 
+    ON
+	(Z.NUM_TELEFONICO = E.TELEFONO)
+	AND (Z.linea_negocio_homologado <> 'PREPAGO')
+	---------&&&&&&&&&&&&&&&&---------------
+	------INICIO REFACTORING 
 LEFT JOIN ${ESQUEMA_CS_ALTAS}.otc_t_altas_bi AS A_MES_ANT 
     ON
 	(Z.NUM_TELEFONICO = A_MES_ANT.TELEFONO)
@@ -1239,37 +1263,17 @@ LEFT JOIN ${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi AS TO_MES_ANT
 	(Z.IDENTIFICACION_CLIENTE=TO_MES_ANT.documento_cliente)
 	AND
 	(TO_MES_ANT.P_FECHA_PROCESO = '${fecha_mes_ant_cp}')
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_alta_hist_unic AS A 
-    ON
-	(Z.NUM_TELEFONICO = A.TELEFONO)
-	-----------------------------------------------------
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_baja_hist_unic AS G 
     ON
 	(Z.NUM_TELEFONICO = G.TELEFONO)
-	-----------------------------------------------------
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic AS C 
-    ON
-	(Z.NUM_TELEFONICO = C.TELEFONO)
-	AND (Z.linea_negocio_homologado <> 'PREPAGO')
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic AS D 
-    ON
-	(Z.NUM_TELEFONICO = D.TELEFONO)
-	AND (Z.linea_negocio_homologado = 'PREPAGO')
-	-- LINEA_NEGOCIO_HOMOLOGADO SOLO ES PREPAGO  ,   POSPAGO O HOME
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic AS E 
-    ON
-	(Z.NUM_TELEFONICO = E.TELEFONO)
-	AND (Z.linea_negocio_homologado <> 'PREPAGO')
-	--insertado en RF
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_no_reciclable_hist_unic AS B 
     ON
 	(NUM_TELEFONICO = B.TELEFONO)
-	--AND (LINEA_NEGOCIO_BAJA <> 'PREPAGO') --insertado en RF
-	--LEFT JOIN ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST_UNIC AS F 
-	--ON (NUM_TELEFONICO = F.TELEFONO)
-LEFT JOIN ${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST AS abr 
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_alta_baja_reproceso_hist AS abr 
     ON 
 	(NUM_TELEFONICO = abr.TELEFONO)
+	------FIN REFACTORING
+	-------&&&&&&&&&&&&&&&-----------------
     ;
 --CREAMOS TABLA TEMPORAL UNION PARA OBTENER ULTIMO MOVIMIENTO DEL MES POR NUM_TELEFONO
 DROP TABLE ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2;
@@ -1313,6 +1317,7 @@ SELECT
 	, VALOR_CRED
 	, CIUDAD_USUARIO
 	, PROVINCIA_USUARIO
+	-- FIN REFACTORING
 FROM
 	(
 	SELECT
@@ -1705,7 +1710,6 @@ A.*
 FROM ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2 A
 LEFT JOIN ${ESQUEMA_TEMP}.OTC_T_CTL_POS_USR_NC C
 ON (A.DOMAIN_LOGIN_OW = C.USUARIO);
-
 
 --tercera tabla fuente:
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_seg_tmp;

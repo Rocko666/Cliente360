@@ -92,7 +92,7 @@ id_tipo_movimiento
 	when upper(tipo_movimiento) like '%TRANSFER%OUT%' then 'POS_PRE'
 	when upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%' then 'UPSELL'
 	when upper(tipo_movimiento) like '%NO%RECICLABLE%' then 'NO_RECICLABLE'
-	when upper(tipo_movimiento) like '%ALTAS%BAJAS%REPROCESO%' then 'ALTAS_BAJAS_REPROCESO'
+	when upper(tipo_movimiento) like '%ALTAS%BAJAS%REPROCESO%' then 'ALTA_BAJA'
 	ELSE tipo_movimiento END AS auxiliar
 from db_desarrollo2021.otc_t_catalogo_consolidado_id  
 where upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
@@ -117,16 +117,24 @@ where upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%'
 and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
 ;
 
-
 -- tabla temporal para inclusion de SOLICITUDES DE PORTABILIDAD
 DROP TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in;
 CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
-	SELECT *
+	SELECT distinct 
+	ln_origen
+	,telefono
+	,fvc
+	,created_when
+	,salesorderprocesseddate
 	--LA SIGUIENTE TABLA FUE TRAIDA DESDE ORACLE CON SPARK CON EL QUERY DE CARLOS CASTILLO
-	FROM db_desarrollo2021.r_om_portin_co --cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
-	--WHERE FVC >= ${fecha_vc} 
+	FROM db_desarrollo2021.sol_port_in_2
+	--FROM db_desarrollo2021.r_om_portin_co 
+	--cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
+	WHERE created_when BETWEEN '${fecha_port_ini}' AND '${fecha_port_fin}'
+	AND FVC IS NOT NULL
+	and UPPER(estado)='APROBADO'
 ; 
--- CREATED whEN < MES ANALISI 
+-- tabla final OTC_T_360_GENERAL
 INSERT
 	overwrite TABLE db_desarrollo2021.d_otc_t_360_general PARTITION(fecha_proceso)
 SELECT
@@ -196,7 +204,8 @@ t1.telefono
 	, t1.fecha_ultima_renovacion_jn
 	, t1.fecha_ultimo_cambio_plan
 	, t1.tipo_movimiento_mes
-	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
+	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE 
+	--cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
 	, nvl(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes)
 	, t1.es_parque
 	, t1.banco
@@ -240,8 +249,9 @@ t1.telefono
 	, A2.OFICINA_CAMBIO_PLAN
 	, A2.COD_PLAN_ANTERIOR
 	, A2.DES_PLAN_ANTERIOR
-	--nvl aniadido en REFACTORING para agregar descuentos al resto de movimientos
-	, nvl(descu.discount_value, A2.TB_DESCUENTO)
+	-- LINEA COMENTADA: nvl aniadido en REFACTORING para agregar descuentos al resto de movimientos,
+	--,A2.TB_DESCUENTO
+	, nvl(descu.discount_value, A2.TB_DESCUENTO) AS TB_DESCUENTO
 	, A2.TB_OVERRIDE
 	, A2.DELTA
 	, A1.CANAL_MOVIMIENTO_MES
@@ -283,8 +293,7 @@ t1.telefono
 		ELSE 'NO'
 	END) AS perfil
 	, (CASE
-		WHEN t1.estado_abonado NOT IN('BAA', 'BAP') THEN COALESCE(wb.usuario_web
-		, 'NO')
+		WHEN t1.estado_abonado NOT IN('BAA', 'BAP') THEN COALESCE(wb.usuario_web, 'NO')
 		ELSE 'NO'
 	END) AS usuario_web
 	, (CASE
@@ -292,15 +301,15 @@ t1.telefono
 		ELSE NULL
 	END) AS fecha_registro_web
 	--20210629 - SE AGREGA CAMPO FECHA NACIMIENTO
-	--20210712 - Giovanny Cholca,  valida que la fecha actual - fecha de nacimiento no sea menor a 18 años,  si se cumple colocamos null al a la fecha de nacimiento
+	--20210712 - Giovanny Cholca,  valida que la fecha actual -
+	-- fecha de nacimiento no sea menor a 18 años,  si se cumple colocamos null al a la fecha de nacimiento
 	, CASE
 		WHEN round(datediff('2022-08-01'
 		, COALESCE(CAST(cs.fecha_nacimiento AS varchar(12))
 		, '2022-08-01'))/ 365.25) <18
 		OR round(datediff('2022-08-01'
 		, COALESCE(CAST(cs.fecha_nacimiento AS varchar(12))
-		, '2022-08-01'))/ 365.25) > 120
-THEN NULL
+		, '2022-08-01'))/ 365.25) > 120 THEN NULL
 		ELSE cs.fecha_nacimiento
 	END AS fecha_nacimiento
 	-----------------------------------
@@ -312,7 +321,7 @@ THEN NULL
 	, cat_p.ID_TIPO_MOVIMIENTO AS id_producto
 	, A1.SUB_MOVIMIENTO
 	, TEC.TECNOLOGIA
-	, datediff(A2.FECHA_MOVIMIENTO_BAJA, t1.fecha_alta) AS DIAS_TRANSCURRIDOS_BAJA
+	, datediff(t1.fecha_alta, A2.FECHA_MOVIMIENTO_BAJA) AS DIAS_TRANSCURRIDOS_BAJA
 	, A2.DIAS_EN_PARQUE
 	, A2.DIAS_EN_PARQUE_PREPAGO
 	, (CASE
@@ -377,6 +386,9 @@ THEN NULL
 			WHEN upper(SPI.ln_origen) like '%POSTPAID%' THEN 'POSPAGO'
 			WHEN upper(SPI.ln_origen) like '%PREPAID%' THEN 'PREPAGO'
 			ELSE '' END) AS TIPO_DE_CUENTA_EN_OPERADOR_DONANTE
+	-----------------------------------
+	---------FIN REFACTORING
+	-------------------------------------
 	, ${FECHAEJE} AS fecha_proceso
 FROM
 ----- tabla final del proceso OTC_360_GENERAL SQL 1-- proviene de PIVOT PARQUE
@@ -386,15 +398,12 @@ LEFT JOIN db_desarrollo2021.otc_t_360_parque_1_tmp_t_mov A2
 ON
 	(t1.TELEFONO = A2.NUM_TELEFONICO)
 	AND (t1.LINEA_NEGOCIO = a2.LINEA_NEGOCIO)
---PARA INCLUIR mines NO RECICLABLE
---LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A11 
---ON
---	(t1.TELEFONO = A11.TELEFONO)
---	AND ('NO_RECICLABLE'= upper(A11.TIPO))
 -----------TABLA SECUNDARIA GENERADA EN MOVI PARQUE:   CONTIENE RESULTADO DE UNIONS
 LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A1 
 ON
 	(t1.TELEFONO = A1.TELEFONO)
+	---LA LINEA DE ABAJO SE HA COMENTADO PARA QUE SE INCLUYAN LOS MOVIMIENTOS NO_RECICLABLE 
+	--- LOS CUALES VIENEN SIN EL CAMPO fecha_movimiento_mes QUE GENERA EL CRUCE:
 	--AND (t1.fecha_movimiento_mes = A1.fecha_movimiento_mes)
 LEFT JOIN db_temporales.otc_t_cuenta_num_tmp A3 
 ON
@@ -420,6 +429,8 @@ ON
 	--20210629 - SE REALIZA EL CRUCE CON LA TEMPORAL PARA AGREGAR CAMPO FECHA NACIMIENTO
 LEFT JOIN db_temporales.tmp_fecha_nacimiento_mvp cs ON
 	(t1.identificacion_cliente = cs.cedula)
+	----------INSERTADO EN REFACTORING-------------------
+	-------------\/\/\/\/\/\/\/\/\/\/--------------------------
 LEFT JOIN db_reportes.otc_t_360_modelo TEC ON
 	t1.TELEFONO = TEC.num_telefonico
 	AND (${FECHAEJE} = TEC.fecha_proceso)
@@ -437,4 +448,11 @@ LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_producto cat_p ON
 	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
 LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_tipo_mov cat_tm ON
 	upper(A1.tipo) = upper(cat_tm.auxiliar)--ojo puede ser por esto el alta_baja_reproces ERROR
+--PARA INCLUIR mines NO RECICLABLE
+--LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A11 
+--ON
+--	(t1.TELEFONO = A11.TELEFONO)
+--	AND ('NO_RECICLABLE'= upper(A11.TIPO))
+----------/\/\/\/\/\/\/\/\/\/\/\/\-----------------
+----------FIN DE REFACTORING-------------------
 ;

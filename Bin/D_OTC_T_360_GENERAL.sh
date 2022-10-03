@@ -12,7 +12,7 @@
 #------------------------------------------------------
 # VARIABLES CONFIGURABLES POR PROCESO (MODIFICAR)
 #------------------------------------------------------
-#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220924 3
+#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220927
 # ENT. ANTERIOR ----> ENTIDAD=OTC_T_360_GENERAL
 ENTIDAD=D_OTC_T_360_GENERAL
 # AMBIENTE (1=produccion, 0=desarrollo)
@@ -251,7 +251,8 @@ let fechamenos5=$fechamenos5_1*1
 fecha_no_reciclable=`date '+%Y-%m-%d' -d "$FECHAEJE"`
 let fecha_n_r=$fecha_no_reciclable
 fecha_mes_desp=`date -d "$FECHAEJE-1 month" "+%Y%m"`
-fecha_vc=`date -d "$FECHAEJE-2 month" "+%Y-%m-%d"`
+fecha_port_ini=`date -d "$FECHAEJE-2 month" "+%Y-%m-%d"`
+fecha_port_fin=`date -d "$FECHAEJE" "+%Y-%m-%d"`
 #------------------------------------------------------
 # CREACION DE LOGS 
 #------------------------------------------------------
@@ -342,8 +343,9 @@ if [ "$PASO" = "3" ]; then
 	--hiveconf hive.auto.convert.sortmerge.join=true --hiveconf hive.optimize.bucketmapjoin=true --hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
 	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fechamas1=${fechamas1} --hivevar FECHAEJE=${FECHAEJE} --hivevar fechamenos1mes=${fechamenos1mes} --hivevar fechamenos2mes=${fechamenos2mes} \
 	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
-	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_vc=${fecha_vc} \
+	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_port_ini=${fecha_port_ini} \
 	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
+	--hivevar fecha_port_fin=${fecha_port_fin} \
 	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo
 		if [ $? -eq 0 ]; then

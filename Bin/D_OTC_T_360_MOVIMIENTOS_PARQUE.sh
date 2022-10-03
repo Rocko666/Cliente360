@@ -145,6 +145,7 @@ fi
 #------------------------------------------------------
 # DEFINICION DE FECHAS
 #------------------------------------------------------
+## fecha maxima que se puede ejecutar este proceso es hoy -1 dia
 fecha_proceso=`date -d "$FECHAEJE" "+%Y-%m-%d"`
 f_check=`date -d "$FECHAEJE" "+%d"`
  # para tipo de dato DATE
@@ -234,6 +235,8 @@ if [ "$PASO" = "2" ]; then
 	--hivevar TABLA_PIVOTANTE=${TABLA_PIVOTANTE} --hivevar VAL_COLA_EJECUCION=${VAL_COLA_EJECUCION} --hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} \
 	--hivevar fecha_mes_ant=${fecha_mes_ant} --hivevar fecha_mes_desp=${fecha_mes_desp} \
 	--hivevar fecha_mes_ant_cp=${fecha_mes_ant_cp} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
+	--hivevar f_inicio_abr=${f_inicio_abr} --hivevar f_fin_abr=${f_fin_abr} \
+	--hivevar f_efectiva=${f_efectiva} \
 	-f ${VAL_RUTA}/sql/D_OTC_T_360_MOVIMIENTOS_PARQUE.sql &>> $LOGS/$EJECUCION_LOG.log
 
 				# Verificacion de creacion tabla external
