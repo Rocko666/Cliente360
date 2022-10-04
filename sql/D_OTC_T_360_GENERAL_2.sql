@@ -132,7 +132,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
 	--cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
 	WHERE created_when BETWEEN '${fecha_port_ini}' AND '${fecha_port_fin}'
 	AND FVC IS NOT NULL
-	and UPPER(estado)='APROBADO'
+	--and UPPER(estado)<>'RECHAZADO'
 ; 
 -- tabla final OTC_T_360_GENERAL
 INSERT
@@ -326,7 +326,7 @@ t1.telefono
 	, A2.DIAS_EN_PARQUE_PREPAGO
 	, (CASE
 		WHEN upper(DESCU.descripcion_descuento) LIKE '%CONADIS%' THEN 'CONADIS'
-		WHEN upper(DESCU.descripcion_descuento) LIKE '%ADULTO MAYOR%' THEN 'NO_PYMES'
+		WHEN upper(DESCU.descripcion_descuento) LIKE '%ADULTO%MAYOR%' THEN 'NO_PYMES'
 		ELSE ''
 	END) AS TIPO_DESCUENTO_CONADIS
 	, DESCU.descripcion_descuento AS TIPO_DESCUENTO

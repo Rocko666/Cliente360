@@ -90,6 +90,7 @@ SELECT
 	, cap_endeu
 	, valor_cred
 	, CAST(NULL AS string) AS vol_invol
+	, account_num
 	----xxxxxxxxxxxxxxxxxxxxxxxx---------  
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
@@ -156,8 +157,8 @@ SELECT
 	, CAST(NULL AS INT) AS VALOR_CRED
 	, (CASE
 		WHEN MOTIVO_BAJA = 'COBRANZAS' THEN 'INVOLUNTARIO'
-		ELSE 'VOLUNTARIO'
-	END) AS VOL_INVOL
+		ELSE 'VOLUNTARIO' END) AS VOL_INVOL
+	, account_no AS account_num
 	---------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXX-----------------------------
 FROM ${ESQUEMA_CS_ALTAS}.otc_t_BAJAS_bi 
 WHERE p_FECHA_PROCESO = '${fecha_movimientos_cp}'
@@ -490,7 +491,7 @@ SELECT
 		ELSE linea_negocio
 	END) AS linea_negocio
 	, 'ALTA_BAJA' AS tipo
-	, 'ALTA BAJA REPROCESO' AS SUB_MOVIMIENTO
+	, 'ALTAS BAJAS REPROCESO' AS SUB_MOVIMIENTO
 	, account_num
 	, documento_cliente
 	, nombre_plan
@@ -595,6 +596,7 @@ SELECT
 	, XX.CAP_ENDEU
 	, XX.VALOR_CRED
 	, XX.VOL_INVOL
+	, XX.ACCOUNT_NUM
 FROM
 	(
 	SELECT
@@ -644,6 +646,7 @@ FROM
 		, AA.CAP_ENDEU
 		, AA.VALOR_CRED
 		, AA.VOL_INVOL
+		, AA.ACCOUNT_NUM
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
 		, aa.TELEFONO
@@ -709,6 +712,7 @@ SELECT
 	, XX.CAP_ENDEU
 	, XX.VALOR_CRED
 	, XX.VOL_INVOL
+	, XX.ACCOUNT_NUM
 FROM
 	(
 	SELECT
@@ -758,6 +762,7 @@ FROM
 		, AA.CAP_ENDEU
 		, AA.VALOR_CRED
 		, AA.VOL_INVOL
+		, AA.ACCOUNT_NUM
 		---------------------------------------
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
@@ -1125,7 +1130,11 @@ SELECT
 	, Z.FECHA_PROCESO
 	, Z.NUMERO_ABONADO
 	, Z.LINEA_NEGOCIO
-	, Z.ACCOUNT_NUM
+	-- LA LINEA DE ABAJO SE HA MODIFICADO para incluir account num de los movimientos BAJAS Y ALTAS BAJAS REPROCESO
+	-- PARA LOS CUALES account num VIENE COMO null en la tabla pivotante
+	, (case when Z.ACCOUNT_NUM is null then 
+		nvl(G.ACCOUNT_NUM, abr.ACCOUNT_NUM)
+		ELSE Z.ACCOUNT_NUM end) AS ACCOUNT_NUM
 	, Z.SUB_SEGMENTO
 	, Z.TIPO_DOC_CLIENTE
 	, Z.IDENTIFICACION_CLIENTE
@@ -1682,7 +1691,7 @@ fecha
 , campania
 , codigo_distribuidor
 , nom_distribuidor
-, regexp_replace(codigo_plaza, '\n', '') AS codigo_plaza
+, regexp_replace(regexp_replace(codigo_plaza, '\n', ''),'¶','') AS codigo_plaza
 , nom_plaza
 , ciudad
 , provincia
