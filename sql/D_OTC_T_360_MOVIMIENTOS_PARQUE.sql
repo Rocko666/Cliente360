@@ -1683,9 +1683,8 @@ WHERE
 --tabla temporal para el catalogo de USUARIOS
 DROP TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC;
 create table ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC as 
-select 
-fecha
-, usuario
+select DISTINCT
+usuario
 , nom_usuario
 , canal
 , campania
@@ -1698,9 +1697,9 @@ fecha
 , region
 , sub_canal
 , ruc_distribuidor
-, fechacarga
 , nuevo_subcanal
-FROM db_desarrollo2021.OTC_T_CTL_POS_USR_NC;
+FROM db_desarrollo2021.OTC_T_CTL_POS_USR_NC
+WHERE fecha < '${fecha_proceso}';
 
 ----------TABLA UNION FINAL CON DATOS DEL CATALOGO DE USUARIOS
 -- de aqui sale tipo de movimiento
@@ -1717,7 +1716,7 @@ A.*
 , C.REGION 
 , C.RUC_DISTRIBUIDOR 
 FROM ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2 A
-LEFT JOIN ${ESQUEMA_TEMP}.OTC_T_CTL_POS_USR_NC C
+LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC C
 ON (A.DOMAIN_LOGIN_OW = C.USUARIO);
 
 --tercera tabla fuente:

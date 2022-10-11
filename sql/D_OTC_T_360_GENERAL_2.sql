@@ -206,7 +206,8 @@ t1.telefono
 	, t1.tipo_movimiento_mes
 	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE 
 	--cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
-	, nvl(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes)
+	--t1.fecha_movimiento_mes
+	, A1.fecha_movimiento_mes
 	, t1.es_parque
 	, t1.banco
 	, t1.parque_recargador
@@ -412,7 +413,7 @@ ON
 LEFT JOIN db_desarrollo2021.otc_t_360_parque_1_mov_seg_tmp A4 
 ON
 	(t1.TELEFONO = A4.TELEFONO)
-	AND (t1.es_parque = 'SI')
+	--AND (t1.es_parque = 'SI')
 LEFT JOIN db_temporales.OTC_T_parque_traficador_dias_tmp A5 
 ON
 	(t1.TELEFONO = A5.TELEFONO)
