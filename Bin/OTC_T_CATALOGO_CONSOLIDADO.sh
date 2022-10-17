@@ -81,10 +81,13 @@ echo "==== Hace el llamado al python que realiza la conversion del archivo csv a
 fi
 #VALIDA EJECUCION DEL PYTHON
 echo "==== Valida ejecucion del python que hace la conversion de csv a excel ====" >> $VAL_LOG
-error_py=`egrep 'TypeError:|FAILED:|Error|Table not found|Table already exists|Vertex|No such file or directory' $LOGS/$EJECUCION.err | wc -l`
+error_py=`egrep 'AnalysisException|TypeError:|FAILED:|Error|Table not found|Table already exists|Vertex|No such file or directory' $LOGS/$EJECUCION.err | wc -l`
 if [ $error_py -eq 0 ];then
 			echo "==== OK - La ejecucion del python  es EXITOSO ====" >> $VAL_LOG
 		else
 			echo "==== ERROR - En la ejecucion del python  ====" >> $VAL_LOG
 			exit 1
 fi		
+
+
+### sh -x /home/nae108834/Cliente360_RF/bin/OTC_T_CATALOGO_CONSOLIDADO_ID.sh

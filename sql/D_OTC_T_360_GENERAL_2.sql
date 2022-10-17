@@ -42,8 +42,8 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final AS
 FROM
 		${ESQUEMA_CS_ALTAS}.DESPACHOS_NC_FINAL
 WHERE
-		fecha_carga = ${fecha_mes_desp}
-	AND
+		--fecha_carga = ${fecha_mes_desp}
+	--AND
         upper(operadora) = 'MOVISTAR'
 ;
 --TABLA TEMPORAL PARA id_canal DESDE otc_t_catalogo_consolidado_id
@@ -139,7 +139,7 @@ INSERT
 	overwrite TABLE db_desarrollo2021.d_otc_t_360_general PARTITION(fecha_proceso)
 SELECT
 	DISTINCT 
-t1.telefono
+t1.telefono AS num_telefonico
 	, t1.codigo_plan
 	, (CASE
 		WHEN t1.estado_abonado NOT IN('BAA', 'BAP') THEN COALESCE(pp.usa_app
@@ -220,7 +220,7 @@ t1.telefono
 	, t1.susp_voluntaria
 	, t1.vencimiento_cartera
 	, t1.saldo_cartera
-	, A2.fecha_alta_historica
+	, A2.fecha_alta_historica as fecha_alta_historia
 	, A2.CANAL_ALTA
 	, A2.SUB_CANAL_ALTA
 	--, A2.NUEVO_SUB_CANAL_ALTA
@@ -335,7 +335,7 @@ t1.telefono
 	, A2.PROVINCIA_ACTIVACION
 	, A2.COD_CATEGORIA
 	, A2.COD_DA
-	, A2.NOM_USUARIO
+	, A1.NOM_USUARIO
 	, A2.PROVINCIA_IVR
 	, A2.PROVINCIA_MS
 	, A2.FECHA_MOVIMIENTO_BAJA
@@ -387,7 +387,9 @@ t1.telefono
 			WHEN upper(SPI.ln_origen) like '%POSTPAID%' THEN 'POSPAGO'
 			WHEN upper(SPI.ln_origen) like '%PREPAID%' THEN 'PREPAGO'
 			ELSE '' END) AS TIPO_DE_CUENTA_EN_OPERADOR_DONANTE
-	-----------------------------------
+	, A2.FECHA_ALTA_PREPAGO
+	, (case when UPPER(t1.es_parque) = 'NO' THEN t1.tarifa END) AS TARIFA_BASICA_BAJA
+	-------------------------------------
 	---------FIN REFACTORING
 	-------------------------------------
 	, ${FECHAEJE} AS fecha_proceso

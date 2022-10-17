@@ -55,7 +55,13 @@ for vColumn in vColumns:
             getColumnName(vColumn)
         )
 
-df3 = df1.select(*vColumnsOk)
+df2 = df1.select(*vColumnsOk)
+
+df3 = df2.withColumn(
+    "fechacarga",
+    F.lit(datetime.now())
+)
+
 df3.repartition(1).write.mode(vTipo).saveAsTable(vTablaOut)
 
 spark.stop()
