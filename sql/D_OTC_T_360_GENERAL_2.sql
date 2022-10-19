@@ -206,7 +206,7 @@ t1.telefono AS num_telefonico
 	, t1.tipo_movimiento_mes
 	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE 
 	--cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
-	--t1.fecha_movimiento_mes
+	--NVL(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes) AS fecha_movimiento_mes
 	, A1.fecha_movimiento_mes
 	, t1.es_parque
 	, t1.banco

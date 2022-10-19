@@ -1688,6 +1688,7 @@ WHERE
 --tabla temporal para el catalogo de USUARIOS
 DROP TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC;
 create table ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC as 
+select * from (
 select DISTINCT
 usuario
 , nom_usuario
@@ -1703,8 +1704,11 @@ usuario
 , sub_canal
 , ruc_distribuidor
 , nuevo_subcanal
+, fecha
+, ROW_NUMBER() OVER(PARTITION BY usuario ORDER BY fecha DESC) AS rnum
 FROM db_desarrollo2021.OTC_T_CTL_POS_USR_NC
-WHERE fecha < '${fecha_proceso}';
+WHERE fecha < '${fecha_proceso}') tt
+WHERE rnum = 1;
 
 ----------TABLA UNION FINAL CON DATOS DEL CATALOGO DE USUARIOS
 -- de aqui sale tipo de movimiento
