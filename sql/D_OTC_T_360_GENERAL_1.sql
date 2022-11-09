@@ -44,6 +44,7 @@ having count(1)>0;
 drop table if exists ${ESQUEMA_TEMP}.otc_t_360_usuario_app_tmp;
 create table ${ESQUEMA_TEMP}.otc_t_360_usuario_app_tmp as
 select celular numero_telefono, count(1) total
+-- desde db_thebox
 from ${ESQUEMA_TABLA_1}.otc_t_rep_usuarios_registrados
 group by celular
 having count(1)>0;
@@ -84,7 +85,9 @@ from(
 select t.c_customer_id numero_telefono, t1.valor valor_bono, t1.cod_aa codigo_bono,cast(t.c_transaction_datetime as date) as fecha
 ,row_number() over (partition by t.c_customer_id order by t.c_transaction_datetime DESC) as id
 from ${ESQUEMA_TABLA_3}.otc_t_pmg_bonos_combos t
-inner join db_temporales.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
+-- LINEA COMENTADA en  REFACTORING por PROBLEMA CON TABLA TEMPORAL PIVOT PARQUE
+--inner join db_temporales.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
+inner join db_desarrollo2021.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
 inner join db_dwec.OTC_T_CTL_BONOS t1 on t1.operacion=t.c_packet_code
 where t.fecha_proceso > ${fechamenos2mes}
 and t.fecha_proceso < ${fechamas1}
@@ -113,7 +116,9 @@ from(
 select t.c_customer_id numero_telefono, t1.valor_con_iva valor_bono, t1.bono codigo_bono,cast(t.c_transaction_datetime as date) as fecha
 ,row_number() over (partition by t.c_customer_id order by t.c_transaction_datetime DESC) as id
 from db_payment_manager.otc_t_pmg_bonos_combos t
-inner join db_temporales.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
+--LINEA COMENTADA en  REFACTORING por PROBLEMA CON TABLA TEMPORAL PIVOT PARQUE
+--inner join db_temporales.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
+inner join db_desarrollo2021.otc_t_360_parque_1_tmp t2 on t2.num_telefonico= t.c_customer_id and upper(t2.linea_negocio) like 'PRE%'
 inner join db_reportes.cat_bonos_pdv t1 on t1.codigo_pm=t.c_packet_code
 inner join db_rdb.otc_t_oferta_comercial_comberos t3 on t3.cod_aa=t1.bono
 where t.fecha_proceso > ${fechamenos1mes}
@@ -138,7 +143,10 @@ where orden=1;
 drop table if exists ${ESQUEMA_TEMP}.otc_t_360_homologacion_segmentos;
 create table ${ESQUEMA_TEMP}.otc_t_360_homologacion_segmentos as
 select distinct UPPER(a.sub_segmento) sub_segmento, b.segmento,b.segmento_fin
-from db_temporales.otc_t_360_parque_1_tmp a
+-- LINEA COMENTADA en  REFACTORING por PROBLEMA CON TABLA TEMPORAL PIVOT PARQUE
+--from db_temporales.otc_t_360_parque_1_tmp a
+from db_desarrollo2021.otc_t_360_parque_1_tmp a
+--- EXISTE DEPENDENCIA: tabla desde proceso GENERAL PREVIO
 inner join db_temporales.otc_t_360_homologacion_segmentos_1 b
 on b.segmentacion = (case when UPPER(a.sub_segmento) = 'ROAMING' then 'ROAMING XDR'
 						when UPPER(a.sub_segmento) like 'PEQUE%' then 'PEQUENAS'
@@ -198,8 +206,11 @@ case when upper(t.linea_negocio) like 'PRE%' then t11.prob_churn else t12.prob_c
 ,t13.start_dat fecha_inicio_pago_anterior
 ,t13.end_dat fecha_fin_pago_anterior
 ,t13.payment_method_name forma_pago_anterior
-from db_temporales.otc_t_360_parque_1_tmp t
+-- LINEA COMENTADA en  REFACTORING por PROBLEMA CON TABLA TEMPORAL PIVOT PARQUE
+--from db_temporales.otc_t_360_parque_1_tmp t
+from db_desarrollo2021.otc_t_360_parque_1_tmp t
 left join ${ESQUEMA_TEMP}.otc_t_360_parque_mop_1_tmp t1 on t1.num_telefonico= t.num_telefonico
+-- DEPENDENCIA PROCESO 360 GENERAL PREVIO
 left join db_temporales.otc_t_360_mop_defecto_tmp t13 on t13.account_num= t.account_num and t13.orden=2
 left join db_temporales.otc_t_360_mop_defecto_tmp t14 on t14.account_num= t.account_num and t14.orden=1
 left outer join ${ESQUEMA_TEMP}.otc_t_360_homologacion_segmentos t3 on upper(t3.sub_segmento) = upper(t.sub_segmento)
@@ -280,7 +291,9 @@ sum(t1.total_rec_bono) as valor_recarga_base,
 sum(total_cantidad) as cantidad_recargas,
 sum(t1.total_rec_bono)/sum(total_cantidad)  as ticket_mes,
 count(telefono) as cant
-from db_temporales.tmp_360_ticket_recarga t1, db_temporales.otc_t_360_parque_1_tmp t2 
+--LINEA COMENTADA en  REFACTORING por PROBLEMA CON TABLA TEMPORAL PIVOT PARQUE
+--from db_temporales.tmp_360_ticket_recarga t1, db_temporales.otc_t_360_parque_1_tmp t2 
+from db_temporales.tmp_360_ticket_recarga t1, db_desarrollo2021.otc_t_360_parque_1_tmp t2 
 where t2.num_telefonico=t1.telefono and t2.linea_negocio_homologado ='PREPAGO'
 group by t1.mes,t2.linea_negocio,t1.telefono;
 

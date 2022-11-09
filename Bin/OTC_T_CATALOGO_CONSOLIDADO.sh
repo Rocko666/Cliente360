@@ -28,7 +28,7 @@ VAL_DIR_HDFS_CAT=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$
 
 VAL_DIA=`date '+%Y%m%d'` 
 VAL_HORA=`date '+%H%M%S'` 
-VAL_LOG=$VAL_RUTA/log/$ENTIDAD"_"$VAL_DIA"_"$VAL_HORA.log
+VAL_LOG=$VAL_RUTA/Log/$ENTIDAD"_"$VAL_DIA"_"$VAL_HORA.log
 VAL_RUTA_ARCHIVO=$VAL_RUTA/input
 VAL_TRREMOTEDIR=`echo $VAL_FTP_RUTA|sed "s/\~}</ /g"`
 VAL_REMOTEDIRFINAL=${VAL_TRREMOTEDIR}
@@ -78,7 +78,7 @@ ETAPA=2
 if [ "$ETAPA" = "2" ]; then
 echo "==== Hace el llamado al python que realiza la conversion del archivo csv a xlsx ====" >> $VAL_LOG
 /usr/hdp/current/spark2-client/bin/spark-submit --master yarn --executor-memory 5G --num-executors 4 --executor-cores 6 --driver-memory 4G ${VAL_RUTA}/OTC_T_CATALOGO_CONSOLIDADO_ID.py --rutain=${VAL_RUTA}/input/$VAL_FTP_NOM_ARCHIVO --tablaout=$VAL_DIR_HDFS_CAT --tipo=overwrite 1>> $VAL_LOG 2>> $VAL_LOG
-fi
+
 #VALIDA EJECUCION DEL PYTHON
 echo "==== Valida ejecucion del python que hace la conversion de csv a excel ====" >> $VAL_LOG
 error_py=`egrep 'AnalysisException|TypeError:|FAILED:|Error|Table not found|Table already exists|Vertex|No such file or directory' $LOGS/$EJECUCION.err | wc -l`
@@ -88,6 +88,6 @@ if [ $error_py -eq 0 ];then
 			echo "==== ERROR - En la ejecucion del python  ====" >> $VAL_LOG
 			exit 1
 fi		
-
+fi
 
 ### sh -x /home/nae108834/Cliente360_RF/bin/OTC_T_CATALOGO_CONSOLIDADO_ID.sh

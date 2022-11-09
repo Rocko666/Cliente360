@@ -1,20 +1,14 @@
 ------------------------------------------------------
 --EJECUCION DE CONSULTA EN HIVE (INSERTAR QUERY)
 ------------------------------------------------------
-SET
-hive.exec.dynamic.partition = nonstrict;
+SET hive.cli.print.header = FALSE;
 
-SET
-hive.cli.print.header = FALSE;
+SET hive.vectorized.execution.enabled = FALSE;
 
-SET
-hive.vectorized.execution.enabled = FALSE;
-
-SET
-hive.vectorized.execution.reduce.enabled = FALSE;
+SET hive.vectorized.execution.reduce.enabled = FALSE;
 
 --tabla temporal para obtener el ultimo descuento por min
-DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES;
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_otc_t_desc_planes;
 
 CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES AS 
 SELECT
@@ -27,7 +21,7 @@ FROM
 	ORDER BY
 		created_when_orden DESC) rn
 	FROM
-		${ESQUEMA_CS_ALTAS}.OTC_T_DESCUENTOS_PLANES
+		${ESQUEMA_CS_ALTAS}.otc_t_descuentos_planes
 	WHERE
 		p_FECHA_PROCESO = ${FECHAEJE}
 ) t1
@@ -40,7 +34,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final AS
 	SELECT
 		*
 FROM
-		${ESQUEMA_CS_ALTAS}.DESPACHOS_NC_FINAL
+		${ESQUEMA_CS_ALTAS}.despachos_nc_final
 WHERE
 		--fecha_carga = ${fecha_mes_desp}
 	--AND
@@ -206,8 +200,8 @@ t1.telefono AS num_telefonico
 	, t1.tipo_movimiento_mes
 	--nvl aumentado en REFACTORING para incluir fecha_movimiento_mes para NO_RECICLABLE 
 	--cuya fecha_movimiento_mes viene null en otc_t_360_general_temp_final
-	--NVL(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes) AS fecha_movimiento_mes
-	, A1.fecha_movimiento_mes
+	--, A1.fecha_movimiento_mes AS fecha_movimiento_mes
+	, NVL(t1.fecha_movimiento_mes, A1.fecha_movimiento_mes) AS fecha_movimiento_mes
 	, t1.es_parque
 	, t1.banco
 	, t1.parque_recargador
@@ -255,10 +249,10 @@ t1.telefono AS num_telefonico
 	, nvl(descu.discount_value, A2.TB_DESCUENTO) AS TB_DESCUENTO
 	, A2.TB_OVERRIDE
 	, A2.DELTA
-	, A1.CANAL_MOVIMIENTO_MES
-	, A1.SUB_CANAL_MOVIMIENTO_MES
+	, nvl(A1.CANAL_COMERCIAL, A1.CANAL_MOVIMIENTO_MES) as CANAL_MOVIMIENTO_MES
+	, nvl (A1.SUB_CANAL_MOVIMIENTO_MES, a1.sub_canal) as SUB_CANAL_MOVIMIENTO_MES
 	--, A1.NUEVO_SUB_CANAL_MOVIMIENTO_MES
-	, A1.DISTRIBUIDOR_MOVIMIENTO_MES
+	, nvl (A1.NOM_DISTRIBUIDOR, A1.DISTRIBUIDOR_MOVIMIENTO_MES) as DISTRIBUIDOR_MOVIMIENTO_MES
 	, A1.OFICINA_MOVIMIENTO_MES
 	, A1.PORTABILIDAD_MOVIMIENTO_MES
 	, A1.OPERADORA_ORIGEN_MOVIMIENTO_MES
@@ -331,8 +325,8 @@ t1.telefono AS num_telefonico
 		ELSE ''
 	END) AS TIPO_DESCUENTO_CONADIS
 	, DESCU.descripcion_descuento AS TIPO_DESCUENTO
-	, A2.CIUDAD
-	, A2.PROVINCIA_ACTIVACION
+	, A1.CIUDAD
+	, A1.PROVINCIA_ACTIVACION
 	, A2.COD_CATEGORIA
 	, A2.COD_DA
 	, A1.NOM_USUARIO
@@ -352,19 +346,16 @@ t1.telefono AS num_telefonico
 	--, A1.OFICINA_MOVIMIENTO_MES
 	, A1.FORMA_PAGO
 	, cat_c.id_tipo_movimiento AS id_canal
-	, A1.CANAL_COMERCIAL
 	, A1.CAMPANIA
-	, A1.CODIGO_DISTRIBUIDOR
-	, A1.NOM_DISTRIBUIDOR
+	, nvl (A1.CODIGO_DISTRIBUIDOR, A1.CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES) as CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES
 	, A1.CODIGO_PLAZA
-	, A1.NOM_PLAZA
+	, nvl (A1.NOM_PLAZA, A1.nom_plaza_MOVIMIENTO_MES) as nom_plaza_MOVIMIENTO_MES
 	, A1.REGION
 	, A1.RUC_DISTRIBUIDOR
 	, A1.EJECUTIVO_ASIGNADO_PTR
 	, A1.AREA_PTR
 	, A1.CODIGO_VENDEDOR_DA_PTR
 	, A1.JEFATURA_PTR
-	--, A1.SUB_CANAL_MOVIMIENTO_MES
 	, A1.CODIGO_USUARIO
 	, desp.DESCRIPCION AS DESCRIPCION_DESP
 	, A1.CALF_RIESGO
@@ -376,7 +367,6 @@ t1.telefono AS num_telefonico
 	, A2.CLIENTE_ANTERIOR
 	, A2.DIAS_RECICLAJE
 	, A2.FECHA_BAJA_RECICLADA
-	, A2.DES_PLAN_ANTERIOR AS NOMBRE_PLAN_ANTERIOR
 	, A2.TARIFA_BASICA_ANTERIOR
 	, A2.FECHA_INICIO_PLAN_ANTERIOR
 	, A2.TARIFA_FINAL_PLAN_ACT
@@ -389,6 +379,8 @@ t1.telefono AS num_telefonico
 			ELSE '' END) AS TIPO_DE_CUENTA_EN_OPERADOR_DONANTE
 	, A2.FECHA_ALTA_PREPAGO
 	, (case when UPPER(t1.es_parque) = 'NO' THEN t1.tarifa END) AS TARIFA_BASICA_BAJA
+	, A1.canal_transacc
+	, A1.distribuidor_crm
 	-------------------------------------
 	---------FIN REFACTORING
 	-------------------------------------
@@ -397,12 +389,12 @@ FROM
 ----- tabla final del proceso OTC_360_GENERAL SQL 1-- proviene de PIVOT PARQUE
 	${ESQUEMA_TEMP}.otc_t_360_general_temp_final t1
 	-----------TABLA PRINCIPAL GENERADA EN MOVI PARQUE
-LEFT JOIN db_desarrollo2021.otc_t_360_parque_1_tmp_t_mov A2 
+LEFT JOIN ${ESQUEMA_TEMP}.otc_t_360_parque_1_tmp_t_mov A2 
 ON
 	(t1.TELEFONO = A2.NUM_TELEFONICO)
 	AND (t1.LINEA_NEGOCIO = a2.LINEA_NEGOCIO)
 -----------TABLA SECUNDARIA GENERADA EN MOVI PARQUE:   CONTIENE RESULTADO DE UNIONS
-LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A1 
+LEFT JOIN ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP A1 
 ON
 	(t1.TELEFONO = A1.TELEFONO)
 	---LA LINEA DE ABAJO SE HA COMENTADO PARA QUE SE INCLUYAN LOS MOVIMIENTOS NO_RECICLABLE 
@@ -412,7 +404,7 @@ LEFT JOIN db_temporales.otc_t_cuenta_num_tmp A3
 ON
 	(t1.account_num = A3.cta_fact)
 	-----------TERCERA TABLA GENERADA EN MOVI PARQUE
-LEFT JOIN db_desarrollo2021.otc_t_360_parque_1_mov_seg_tmp A4 
+LEFT JOIN ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_seg_tmp A4 
 ON
 	(t1.TELEFONO = A4.TELEFONO)
 	--AND (t1.es_parque = 'SI')
@@ -437,25 +429,20 @@ LEFT JOIN db_temporales.tmp_fecha_nacimiento_mvp cs ON
 LEFT JOIN db_reportes.otc_t_360_modelo TEC ON
 	t1.TELEFONO = TEC.num_telefonico
 	AND (${FECHAEJE} = TEC.fecha_proceso)
-LEFT JOIN db_desarrollo2021.TMP_OTC_T_DESC_PLANES DESCU ON
+LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES DESCU ON
 	t1.TELEFONO = DESCU.phone_number
-LEFT JOIN db_desarrollo2021.tmp_desp_nc_final desp ON
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_desp_nc_final desp ON
 	A1.icc = desp.icc
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in SPI ON
 	t1.TELEFONO = SPI.telefono
-LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_canal cat_c ON
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal cat_c ON
 	upper(A1.CANAL_COMERCIAL) = upper(cat_c.tipo_movimiento)
-LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_sub_canal cat_sc ON
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal cat_sc ON
 	upper(A1.SUB_CANAL_MOVIMIENTO_MES) = upper(cat_sc.tipo_movimiento)
-LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_producto cat_p ON
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto cat_p ON
 	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
-LEFT JOIN db_desarrollo2021.tmp_otc_t_cat_id_tipo_mov cat_tm ON
-	upper(A1.tipo) = upper(cat_tm.auxiliar)--ojo puede ser por esto el alta_baja_reproces ERROR
---PARA INCLUIR mines NO RECICLABLE
---LEFT JOIN db_desarrollo2021.OTC_T_360_PARQUE_1_MOV_MES_TMP A11 
---ON
---	(t1.TELEFONO = A11.TELEFONO)
---	AND ('NO_RECICLABLE'= upper(A11.TIPO))
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_tipo_mov cat_tm ON
+	upper(A1.tipo) = upper(cat_tm.auxiliar)
 ----------/\/\/\/\/\/\/\/\/\/\/\/\-----------------
 ----------FIN DE REFACTORING-------------------
 ;

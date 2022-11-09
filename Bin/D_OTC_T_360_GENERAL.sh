@@ -12,9 +12,10 @@
 #------------------------------------------------------
 # VARIABLES CONFIGURABLES POR PROCESO (MODIFICAR)
 #------------------------------------------------------
-#### sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_GENERAL.sh 20220927
+
 # ENT. ANTERIOR ----> ENTIDAD=OTC_T_360_GENERAL
-ENTIDAD=D_OTC_T_360_GENERAL
+## ENTIDAD=D_OTC_T_360_GENERAL
+ENTIDAD=D_CLI360CLI00100
 # AMBIENTE (1=produccion, 0=desarrollo)
 ((AMBIENTE=0))
 FECHAEJE=$1 # yyyyMMdd
@@ -168,7 +169,7 @@ HORA=`date '+%H%M%S'`
 #EJECUCION_LOG Entidad_Fecha_hora nombre del archivo log
 EJECUCION_LOG=$EJECUCION"_"$DIA$HORA		
 #LOGS es la ruta de carpeta de logs por entidad
-LOGS=$VAL_RUTA/log
+LOGS=$VAL_RUTA/Log
 VAL_RUTA_ARCHIVO=$VAL_RUTA/input
 
 version=1.2.1000.2.6.4.0-91
@@ -318,10 +319,10 @@ if [ "$PASO" = "2" ]; then
 	
    # Verificacion de creacion tabla external
 	if [ $? -eq 0 ]; then
-		echo "HIVE: $rc Fin de creacion e insert en tabla temporales sin dependencia " $PASO
+		echo "HIVE: $rc Fin de creacion e insert en tabla temporales sin dependencia --- D_OTC_T_360_GENERAL_1.sql" $PASO
 		else
 		(( rc = 40)) 
-		echo "HIVE: $rc Fallo al ejecutar script desde HIVE - Tabla" $PASO
+		echo "HIVE: $rc Fallo al ejecutar el script D_OTC_T_360_GENERAL_1.sql desde HIVE - Tabla" $PASO
 		exit $rc
 	fi	
    
@@ -349,10 +350,10 @@ if [ "$PASO" = "3" ]; then
 	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo
 		if [ $? -eq 0 ]; then
-			echo "HIVE: $rc Finalizacion con EXITO del insert en hive - otc_t_360_general" $PASO
+			echo "HIVE: $rc Finalizacion con EXITO del insert en hive - D_OTC_T_360_GENERAL_2.sql" $PASO
 			else
 			(( rc = 61)) 
-			echo "HIVE: $rc Fallo al ejecutar el insert desde HIVE - tabla otc_t_360_general" $PASO
+			echo "HIVE: $rc Fallo al ejecutar el insert desde HIVE - D_OTC_T_360_GENERAL_2.sql" $PASO
 			exit $rc
 		fi
 	  FIN=$(date +%s)

@@ -13,7 +13,8 @@
 #------------------------------------------------------
 # VARIABLES CONFIGURABLES POR PROCESO (MODIFICAR)
 #------------------------------------------------------
-ENTIDAD=D_OTC_T_360_MOVIMIENTOS_PARQUE
+## ENTIDAD=D_OTC_T_360_MOVIMIENTOS_PARQUE
+ENTIDAD=D_CLI360CLI00180
 # AMBIENTE (1=produccion, 0=desarrollo)
 ((AMBIENTE=0))
 FECHAEJE=$1 # yyyyMMdd
@@ -78,7 +79,6 @@ if [ "$AMBIENTE" = "1" ]; then
 else 
 	# Cargar Datos desde la base
 	VAL_RUTA=`mysql -N  <<<"select valor from params_des where entidad = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') AND parametro = 'VAL_RUTA';"` 
-	#Limpiar (1=si, 0=no)
 	NAME_SHELL=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'SHELL');"`
 	ESQUEMA_TEMP=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'ESQUEMA_TEMP' );"`
 	ESQUEMA_TABLA=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'ESQUEMA_TABLA' );"`
@@ -88,7 +88,7 @@ fi
 
 #Verificar si tuvo datos de la base
 TIME=`date +%a" "%d"/"%m"/"%Y" "%X`
-if [ -z "$VAL_RUTA" ]||[ -z "$NAME_SHELL" ]||[ -z "$ESQUEMA_TEMP" ]||[ -z "$ESQUEMA_TABLA" ]||[ -z "$TABLA_PIVOTANTE" ]; then
+if [ -z "$VAL_RUTA" ]||[ -z "$NAME_SHELL" ]||[ -z "$ESQUEMA_TEMP" ]||[ -z "$ESQUEMA_TABLA" ]||[ -z "$TABLA_PIVOTANTE" ]||[ -z "$ESQUEMA_CS_ALTAS" ]; then
 ((rc=3))
 echo " $TIME [ERROR] $rc No se han obtenido los parametros necesarios desde la base de datos"
 exit $rc
@@ -117,7 +117,7 @@ HORA=`date '+%H%M%S'`
 #EJECUCION_LOG Entidad_Fecha_hora nombre del archivo log
 EJECUCION_LOG=$EJECUCION"_"$DIA$HORA		
 #LOGS es la ruta de carpeta de logs por entidad
-LOGS=$VAL_RUTA/log
+LOGS=$VAL_RUTA/Log
 	
 #PARAMETROS GENERICOS BEELINE
 VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_CADENA_JDBC';"`
@@ -153,7 +153,6 @@ fecha_movimientos=`date '+%Y-%m-%d' -d "$fecha_proceso+1 day"`
  # para las tablas particionadas
 fecha_movimientos_cp=`date '+%Y%m%d' -d "$fecha_proceso+1 day"`
 fecha_mes_ant_cp=`date -d "$FECHAEJE" "+%Y%m01"`
-fecha_mes_desp=`date -d "$FECHAEJE-1 month" "+%Y%m"`
 fecha_mes_ant=`date -d "$FECHAEJE" "+%Y-%m-01"`
 
 if [ $f_check == "01" ]; then
@@ -243,11 +242,11 @@ if [ "$PASO" = "2" ]; then
 	--hivevar ESQUEMA_TABLA=${ESQUEMA_TABLA} --hivevar f_inicio=${f_inicio} --hivevar fecha_proceso=${fecha_proceso} \
 	--hivevar fecha_movimientos_cp=${fecha_movimientos_cp} --hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fecha_movimientos=${fecha_movimientos} \
 	--hivevar TABLA_PIVOTANTE=${TABLA_PIVOTANTE} --hivevar VAL_COLA_EJECUCION=${VAL_COLA_EJECUCION} --hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} \
-	--hivevar fecha_mes_ant=${fecha_mes_ant} --hivevar fecha_mes_desp=${fecha_mes_desp} \
+	--hivevar fecha_mes_ant=${fecha_mes_ant} \
 	--hivevar fecha_mes_ant_cp=${fecha_mes_ant_cp} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
 	--hivevar f_inicio_abr=${f_inicio_abr} --hivevar f_fin_abr=${f_fin_abr} \
 	--hivevar f_efectiva=${f_efectiva} \
-	-f ${VAL_RUTA}/sql/D_OTC_T_360_MOVIMIENTOS_PARQUE.sql &>> $LOGS/$EJECUCION_LOG.log
+	-f ${VAL_RUTA}/sql/OTC_T_360_MOVIMIENTOS_PARQUE.sql &>> $LOGS/$EJECUCION_LOG.log
 
 				# Verificacion de creacion tabla external
 	if [ $? -eq 0 ]; then
