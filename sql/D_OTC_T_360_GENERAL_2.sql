@@ -436,9 +436,9 @@ LEFT JOIN ${ESQUEMA_TEMP}.tmp_desp_nc_final desp ON
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in SPI ON
 	t1.TELEFONO = SPI.telefono
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal cat_c ON
-	upper(A1.CANAL_COMERCIAL) = upper(cat_c.tipo_movimiento)
+	upper(nvl(A1.CANAL_COMERCIAL, A1.CANAL_MOVIMIENTO_MES)) = upper(cat_c.tipo_movimiento)
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal cat_sc ON
-	upper(A1.SUB_CANAL_MOVIMIENTO_MES) = upper(cat_sc.tipo_movimiento)
+	upper(nvl (A1.SUB_CANAL_MOVIMIENTO_MES, a1.sub_canal)) = upper(cat_sc.tipo_movimiento)
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto cat_p ON
 	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_tipo_mov cat_tm ON
