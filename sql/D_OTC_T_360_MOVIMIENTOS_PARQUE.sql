@@ -81,6 +81,7 @@ SELECT
 	, account_num
 	, distribuidor as distribuidor_crm
 	, canal as canal_transacc
+	, (nvl(tarifa_plan_actual_ov, tarifa_basica))-(nvl(descuento_tarifa_plan_act,0)) as TARIFA_FINAL_PLAN_ACT
 	----xxxxxxxxxxxxxxxxxxxxxxxx---------  
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
@@ -148,6 +149,7 @@ SELECT
 	, account_no AS account_num
 	, CAST(NULL AS STRING) AS distribuidor_crm
 	, CAST(NULL AS STRING) AS canal_transacc
+	, CAST(NULL AS DOUBLE) as TARIFA_FINAL_PLAN_ACT
 	---------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXX-----------------------------
 FROM ${ESQUEMA_CS_ALTAS}.otc_t_BAJAS_bi 
 WHERE p_FECHA_PROCESO = '${fecha_movimientos_cp}'
@@ -206,6 +208,7 @@ SELECT
 	, codigo_plan_anterior AS COD_PLAN_ANTERIOR
 	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
 	, distribuidor as distribuidor_crm
+	, (nvl(tarifa_ov_plan_act, tarifa_basica))-(nvl(descuento_tarifa_plan_act,0)) as TARIFA_FINAL_PLAN_ACT
 	-------------------------XXXXXXXXXXXXXXXXXXXX---------------------------------
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_in_bi 
@@ -263,6 +266,7 @@ SELECT
 	, codigo_plan_anterior AS COD_PLAN_ANTERIOR
 	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
 	, distribuidor as distribuidor_crm
+	, CAST(NULL AS DOUBLE) as TARIFA_FINAL_PLAN_ACT
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi 
@@ -585,6 +589,7 @@ SELECT
 	, XX.ACCOUNT_NUM
 	, XX.distribuidor_crm
 	, XX.canal_transacc
+	, XX.TARIFA_FINAL_PLAN_ACT
 FROM
 	(
 	SELECT
@@ -634,6 +639,7 @@ FROM
 		, AA.ACCOUNT_NUM
 		, AA.distribuidor_crm
 		, AA.canal_transacc
+		, AA.TARIFA_FINAL_PLAN_ACT
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
 		, aa.TELEFONO
@@ -699,6 +705,7 @@ SELECT
 	, XX.ACCOUNT_NUM
 	, XX.distribuidor_crm
 	, XX.canal_transacc
+	, XX.TARIFA_FINAL_PLAN_ACT
 FROM
 	(
 	SELECT
@@ -748,6 +755,7 @@ FROM
 		, AA.ACCOUNT_NUM
 		, AA.distribuidor_crm
 		, AA.canal_transacc
+		, AA.TARIFA_FINAL_PLAN_ACT
 		---------------------------------------
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
@@ -809,6 +817,7 @@ SELECT
 	, XX.COD_PLAN_ANTERIOR
 	, XX.DES_PLAN_ANTERIOR
 	, XX.distribuidor_crm
+	, XX.TARIFA_FINAL_PLAN_ACT
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	(
@@ -853,6 +862,7 @@ FROM
 		, AA.COD_PLAN_ANTERIOR
 		, AA.DES_PLAN_ANTERIOR
 		, AA.distribuidor_crm
+		, AA.TARIFA_FINAL_PLAN_ACT
 		--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO, aa.TELEFONO
@@ -912,6 +922,7 @@ SELECT
 	, XX.COD_PLAN_ANTERIOR
 	, XX.DES_PLAN_ANTERIOR
 	, XX.distribuidor_crm
+	, XX.TARIFA_FINAL_PLAN_ACT
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	(
@@ -956,6 +967,7 @@ FROM
 		, AA.COD_PLAN_ANTERIOR
 		, AA.DES_PLAN_ANTERIOR
 		, AA.distribuidor_crm
+		, AA.TARIFA_FINAL_PLAN_ACT
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
 		, aa.TELEFONO
@@ -1222,7 +1234,7 @@ SELECT
 	, D.ACCOUNT_NUM_ANTERIOR
 	, E.TARIFA_BASICA_ANTERIOR
 	, E.FECHA_INICIO_PLAN_ANTERIOR
-	, E.TARIFA_FINAL_PLAN_ACT
+	, nvl(nvl(E.TARIFA_FINAL_PLAN_ACT, A.TARIFA_FINAL_PLAN_ACT),C.TARIFA_FINAL_PLAN_ACT) as TARIFA_FINAL_PLAN_ACT
 	, E.TARIFA_FINAL_PLAN_ANT
 	--NVL ANIADIDO PARA INCLUIR LA FECHA DE BAJA DE LAS ALTAS_BAJAS_REPROCESO
 	--, G.FECHA as  FECHA_MOVIMIENTO_BAJA
@@ -1343,6 +1355,7 @@ SELECT
 	, canal_transacc
 	, nom_plaza as nom_plaza_MOVIMIENTO_MES
 	, CODIGO_DISTRIBUIDOR as CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES
+	, cod_da
 	-- FIN REFACTORING
 FROM
 	(
@@ -1390,6 +1403,7 @@ FROM
 		, canal_transacc
 		, nom_plaza
 		, CODIGO_DISTRIBUIDOR
+		, cod_da
 		, ROW_NUMBER() OVER (
                 PARTITION BY TELEFONO
 	ORDER BY
@@ -1441,6 +1455,7 @@ FROM
 			, CAST(NULL AS STRING) as canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, CAST(NULL AS STRING) as cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST_UNIC
 		WHERE
@@ -1490,6 +1505,7 @@ FROM
 			, canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, CAST(NULL AS STRING) as cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_POS_PRE_HIST_UNIC
 		WHERE
@@ -1539,6 +1555,7 @@ FROM
 			, canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, CAST(NULL AS STRING) as cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_PRE_POS_HIST_UNIC
 		WHERE
@@ -1587,6 +1604,7 @@ FROM
 			, canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_BAJA_HIST_UNIC
 		WHERE
@@ -1637,6 +1655,7 @@ FROM
 			, CAST(NULL AS STRING) as canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, CAST(NULL AS STRING) as cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_NO_RECICLABLE_HIST_UNIC
 		WHERE
@@ -1686,6 +1705,7 @@ FROM
 			, canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST
 		WHERE
@@ -1735,6 +1755,7 @@ FROM
 			, canal_transacc
 			, nom_plaza
 			, CODIGO_DISTRIBUIDOR
+			, cod_da
 		FROM
 			${ESQUEMA_TABLA}.OTC_T_ALTA_HIST_UNIC
 		WHERE
@@ -1745,7 +1766,7 @@ WHERE
 	RNUM = 1;
 
 
---tabla temporal para el catalogo de USUARIOS
+--tabla temporal para el catalogo de USUARIOS pospago
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pos_usr_nc;
 create table ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC as 
 select * from (
@@ -1766,9 +1787,28 @@ usuario
 , nuevo_subcanal
 , fecha
 , ROW_NUMBER() OVER(PARTITION BY usuario ORDER BY fecha DESC) AS rnum
-FROM db_desarrollo2021.otc_t_ctl_pos_usr_nc
+FROM ${ESQUEMA_CS_ALTAS}.otc_t_ctl_pos_usr_nc
 --FROM db_reportes.otc_t_ctl_pos_usr_nc
 WHERE fecha < '${fecha_proceso}') tt
+WHERE rnum = 1;
+
+--tabla temporal para el catalogo de USUARIOS prepago
+DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pre_usr_nc;
+create table ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_Pre_USR_NC as 
+select * from (
+select DISTINCT
+cod_generico
+, canal
+, codigo_distribuidor
+, nom_distribuidor
+, regexp_replace(regexp_replace(codigo_plaza, '\n', ''),'¶','') AS codigo_plaza
+, nom_plaza
+, sub_canal
+, ruc_distribuidor
+, fecha
+, ROW_NUMBER() OVER(PARTITION BY cod_generico ORDER BY fecha DESC) AS rnum
+FROM db_desarrollo2021.otc_t_ctl_pre_usr_nc
+WHERE ruc_distribuidor <> 'nan') tt
 WHERE rnum = 1;
 
 ----------TABLA UNION FINAL CON DATOS DEL CATALOGO DE USUARIOS
@@ -1785,12 +1825,16 @@ A.*
 , C.NOM_PLAZA
 , C.REGION 
 , C.sub_canal
-, C.RUC_DISTRIBUIDOR 
+, case when  A.SUB_MOVIMIENTO IN ('ALTA PREPAGO','ALTA PORTABILIDAD PREPAGO')
+THEN nvl(PRE.RUC_DISTRIBUIDOR, C.RUC_DISTRIBUIDOR) ELSE  C.RUC_DISTRIBUIDOR END AS RUC_DISTRIBUIDOR
 , C.nuevo_subcanal
 , C.nom_usuario
 FROM ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2 A
 LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC C
-ON (A.DOMAIN_LOGIN_OW = C.USUARIO);
+ON (A.DOMAIN_LOGIN_OW = C.USUARIO)
+LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_Pre_USR_NC pre
+ON (A.cod_da = PRE.cod_generico)
+;
 
 --tercera tabla fuente:
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_seg_tmp;

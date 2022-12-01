@@ -24,6 +24,8 @@ FROM
 		${ESQUEMA_CS_ALTAS}.otc_t_descuentos_planes
 	WHERE
 		p_FECHA_PROCESO = ${FECHAEJE}
+	AND desc_act_desde <=  '${fecha_eje1}'
+	and '${fecha_eje1}' <= desc_act_hasta 
 ) t1
 WHERE
 	rn = 1;
