@@ -90,7 +90,8 @@ if [ "$AMBIENTE" = "1" ]; then
 	VAL_SQL_1=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_1' );"`
 	VAL_SQL_2=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_2' );"`
 	ESQUEMA_TEMP=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_TEMP';"`
-	ESQUEMA_CS_ALTAS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_CS_ALTAS';"` 
+	ESQUEMA_CS_ALTAS=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_CS_ALTAS';"`
+	ESQUEMA_REPORTES=`mysql -N  <<<"select valor from params where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_REPORTES';"` 
 else 
 	# Cargar Datos desde la base
 	VAL_RUTA=`mysql -N  <<<"select valor from params_des where entidad = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') AND parametro = 'VAL_RUTA';"` 
@@ -106,6 +107,7 @@ else
 	VAL_SQL_2=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' and (ambiente='"$AMBIENTE"') and (parametro = 'VAL_SQL_2' );"`
 	ESQUEMA_TEMP=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_TEMP';"` 
 	ESQUEMA_CS_ALTAS=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_CS_ALTAS';"` 
+	ESQUEMA_REPORTES=`mysql -N  <<<"select valor from params_des where ENTIDAD = '"$ENTIDAD"' AND PARAMETRO = 'ESQUEMA_REPORTES';"` 
 fi	
 	
  #Verificar si tuvo datos de la base
@@ -202,7 +204,7 @@ else
 fi
 
 #VALIDACION DE PARAMETROS INICIALES
-if [ -z "$ENTIDAD" ] || [ -z "$VAL_USER" ] || [ -z "$VAL_CADENA_JDBC" ] || [ -z "$VAL_COLA_EJECUCION" ] || [ -z "$ESQUEMA_TABLA" ] || [ -z "$ESQUEMA_TABLA_1" ] || [ -z "$ESQUEMA_TABLA_2" ] || [ -z "$ESQUEMA_TABLA_3" ] || [ -z "$VAL_SQL_1" ] || [ -z "$VAL_SQL_2" ] || [ -z "$ESQUEMA_TEMP" ] || [ -z "$ESQUEMA_CS_ALTAS" ] ; then 
+if [ -z "$ENTIDAD" ] || [ -z "$VAL_USER" ] || [ -z "$VAL_CADENA_JDBC" ] || [ -z "$VAL_COLA_EJECUCION" ] || [ -z "$ESQUEMA_TABLA" ] || [ -z "$ESQUEMA_TABLA_1" ] || [ -z "$ESQUEMA_TABLA_2" ] || [ -z "$ESQUEMA_TABLA_3" ] || [ -z "$VAL_SQL_1" ] || [ -z "$VAL_SQL_2" ] || [ -z "$ESQUEMA_TEMP" ] || [ -z "$ESQUEMA_CS_ALTAS" ] || [ -z "$ESQUEMA_REPORTES" ] ; then 
 	echo " ERROR - uno de los parametros esta vacio o nulo"
 	exit 1
 fi
@@ -345,7 +347,7 @@ if [ "$PASO" = "3" ]; then
 	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fechamas1=${fechamas1} --hivevar FECHAEJE=${FECHAEJE} --hivevar fechamenos1mes=${fechamenos1mes} --hivevar fechamenos2mes=${fechamenos2mes} \
 	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
 	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_port_ini=${fecha_port_ini} \
-	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
+	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} --hivevar ESQUEMA_REPORTES=${ESQUEMA_REPORTES} \
 	--hivevar fecha_port_fin=${fecha_port_fin} \
 	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo

@@ -7,28 +7,6 @@ SET hive.vectorized.execution.enabled = FALSE;
 
 SET hive.vectorized.execution.reduce.enabled = FALSE;
 
---tabla temporal para obtener el ultimo descuento por min
-DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_otc_t_desc_planes;
-
-CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES AS 
-SELECT
-	*
-FROM
-	(
-	SELECT
-		*
-		, ROW_NUMBER() OVER (PARTITION BY phone_number
-	ORDER BY
-		created_when_orden DESC) rn
-	FROM
-		${ESQUEMA_CS_ALTAS}.otc_t_descuentos_planes
-	WHERE
-		p_FECHA_PROCESO = ${FECHAEJE}
-	AND desc_act_desde <=  '${fecha_eje1}'
-	and '${fecha_eje1}' <= desc_act_hasta 
-) t1
-WHERE
-	rn = 1;
 -- CREACION DE TABLA TEMPORAL PARA DESPACHOS
 DROP TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final;
 
@@ -48,7 +26,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal AS
 SELECT
 	*
 FROM
-	db_desarrollo2021.otc_t_catalogo_consolidado_id
+	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
 	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
 	AND upper(nombre_id)= UPPER('ID_CANAL');
@@ -59,7 +37,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal AS
 SELECT
 	*
 FROM
-	db_desarrollo2021.otc_t_catalogo_consolidado_id
+	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
 	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
 	AND upper(nombre_id)= UPPER('ID_SUBCANAL');
@@ -70,7 +48,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto AS
 SELECT
 	*
 FROM
-	db_desarrollo2021.otc_t_catalogo_consolidado_id
+	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
 	upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
 	AND upper(nombre_id)= UPPER('ID_PRODUCTO');
@@ -90,7 +68,7 @@ id_tipo_movimiento
 	when upper(tipo_movimiento) like '%NO%RECICLABLE%' then 'NO_RECICLABLE'
 	when upper(tipo_movimiento) like '%ALTAS%BAJAS%REPROCESO%' then 'ALTA_BAJA'
 	ELSE tipo_movimiento END AS auxiliar
-from db_desarrollo2021.otc_t_catalogo_consolidado_id  
+from ${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id  
 where upper(extractor) IN ('MOVIMIENTOS', 'TODOS')
 and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
 union ALL SELECT
@@ -99,7 +77,7 @@ id_tipo_movimiento
 , extractor 
 , tipo_movimiento
 , 'DOWNSELL'
-FROM db_desarrollo2021.otc_t_catalogo_consolidado_id  
+FROM ${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id  
 where upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%'
 and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
 union ALL SELECT
@@ -108,7 +86,7 @@ id_tipo_movimiento
 , extractor 
 , tipo_movimiento
 , 'MISMA_TARIFA'
-FROM db_desarrollo2021.otc_t_catalogo_consolidado_id  
+FROM ${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id  
 where upper(tipo_movimiento) like '%CAMBIO%DE%PLAN%'
 and upper(nombre_id)=UPPER('ID_TIPO_MOVIMIENTO')
 ;
@@ -122,12 +100,14 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
 	,fvc
 	,created_when
 	,salesorderprocesseddate
+	,requeststatus
+	,doc_number
 	--LA SIGUIENTE TABLA FUE TRAIDA DESDE ORACLE CON SPARK CON EL QUERY DE CARLOS CASTILLO
 	FROM db_desarrollo2021.sol_port_in_2
 	--FROM db_desarrollo2021.r_om_portin_co 
 	--cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
-	WHERE created_when BETWEEN '${fecha_port_ini}' AND '${fecha_port_fin}'
-	AND FVC IS NOT NULL
+	WHERE nvl(salesorderprocesseddate, created_when) BETWEEN '${fecha_port_ini}' AND '${fecha_port_fin}'
+	and requeststatus in ('Approved','Partially Rejected','Pending in ASCP')
 	--and UPPER(estado)<>'RECHAZADO'
 ; 
 -- tabla final OTC_T_360_GENERAL
@@ -246,9 +226,7 @@ t1.telefono AS num_telefonico
 	, A2.OFICINA_CAMBIO_PLAN
 	, A2.COD_PLAN_ANTERIOR
 	, A2.DES_PLAN_ANTERIOR
-	-- LINEA COMENTADA: nvl aniadido en REFACTORING para agregar descuentos al resto de movimientos,
-	--,A2.TB_DESCUENTO
-	, nvl(descu.discount_value, A2.TB_DESCUENTO) AS TB_DESCUENTO
+	, A2.TB_DESCUENTO AS TB_DESCUENTO
 	, A2.TB_OVERRIDE
 	, A2.DELTA
 	, nvl(A1.CANAL_MOVIMIENTO_MES, A1.CANAL_COMERCIAL) as CANAL_MOVIMIENTO_MES
@@ -322,11 +300,10 @@ t1.telefono AS num_telefonico
 	, A2.DIAS_EN_PARQUE
 	, A2.DIAS_EN_PARQUE_PREPAGO
 	, (CASE
-		WHEN upper(DESCU.descripcion_descuento) LIKE '%CONADIS%' THEN 'CONADIS'
-		WHEN upper(DESCU.descripcion_descuento) LIKE '%ADULTO%MAYOR%' THEN 'NO_PYMES'
-		ELSE ''
-	END) AS TIPO_DESCUENTO_CONADIS
-	, DESCU.descripcion_descuento AS TIPO_DESCUENTO
+		WHEN upper(A2.descripcion_descuento_plan_act) LIKE '%CONADIS%' THEN 'CONADIS'
+		WHEN upper(A2.descripcion_descuento_plan_act) LIKE '%ADULTO%MAYOR%' THEN 'NO_PYMES'
+		ELSE ''	END) AS TIPO_DESCUENTO_CONADIS
+	, A2.descripcion_descuento_plan_act AS TIPO_DESCUENTO
 	, A1.CIUDAD
 	, A1.PROVINCIA_ACTIVACION
 	, A2.COD_CATEGORIA
@@ -383,6 +360,8 @@ t1.telefono AS num_telefonico
 	, (case when UPPER(t1.es_parque) = 'NO' THEN t1.tarifa END) AS TARIFA_BASICA_BAJA
 	, A1.canal_transacc
 	, A1.distribuidor_crm
+	, A2.descuento_tarifa_plan_act
+	, A2.tarifa_plan_actual_ov
 	-------------------------------------
 	---------FIN REFACTORING
 	-------------------------------------
@@ -431,8 +410,6 @@ LEFT JOIN db_temporales.tmp_fecha_nacimiento_mvp cs ON
 LEFT JOIN db_reportes.otc_t_360_modelo TEC ON
 	t1.TELEFONO = TEC.num_telefonico
 	AND (${FECHAEJE} = TEC.fecha_proceso)
-LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES DESCU ON
-	t1.TELEFONO = DESCU.phone_number
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_desp_nc_final desp ON
 	A1.icc = desp.icc
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in SPI ON

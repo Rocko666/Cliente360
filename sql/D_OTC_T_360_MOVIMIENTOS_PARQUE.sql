@@ -82,6 +82,9 @@ SELECT
 	, distribuidor as distribuidor_crm
 	, canal as canal_transacc
 	, (nvl(tarifa_plan_actual_ov, tarifa_basica))-(nvl(descuento_tarifa_plan_act,0)) as TARIFA_FINAL_PLAN_ACT
+	, descuento_tarifa_plan_act
+	, tarifa_plan_actual_ov
+	, descripcion_descuento_plan_act
 	----xxxxxxxxxxxxxxxxxxxxxxxx---------  
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
@@ -150,6 +153,9 @@ SELECT
 	, CAST(NULL AS STRING) AS distribuidor_crm
 	, CAST(NULL AS STRING) AS canal_transacc
 	, CAST(NULL AS DOUBLE) as TARIFA_FINAL_PLAN_ACT
+	, CAST(NULL AS DOUBLE) as descuento_tarifa_plan_act
+	, CAST(NULL AS DOUBLE) as tarifa_plan_actual_ov
+	, CAST(NULL AS STRING) AS descripcion_descuento_plan_act
 	---------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXX-----------------------------
 FROM ${ESQUEMA_CS_ALTAS}.otc_t_BAJAS_bi 
 WHERE p_FECHA_PROCESO = '${fecha_movimientos_cp}'
@@ -209,6 +215,8 @@ SELECT
 	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
 	, distribuidor as distribuidor_crm
 	, (nvl(tarifa_ov_plan_act, tarifa_basica))-(nvl(descuento_tarifa_plan_act,0)) as TARIFA_FINAL_PLAN_ACT
+	, descuento_tarifa_plan_act
+	, tarifa_ov_plan_act
 	-------------------------XXXXXXXXXXXXXXXXXXXX---------------------------------
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_in_bi 
@@ -267,6 +275,8 @@ SELECT
 	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
 	, distribuidor as distribuidor_crm
 	, CAST(NULL AS DOUBLE) as TARIFA_FINAL_PLAN_ACT
+	, CAST(NULL AS DOUBLE) as descuento_tarifa_plan_act
+	, CAST(NULL AS DOUBLE) as tarifa_ov_plan_act
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi 
@@ -325,6 +335,9 @@ SELECT
 	, TARIFA_FINAL_PLAN_ACT 
 	, TARIFA_FINAL_PLAN_ANT
 	, PROVINCIA
+	, descripcion_descuento_plan_act
+	, descuento_tarifa_plan_act
+	, tarifa_plan_actual_ov
 	-------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-------------------------------------
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_cambio_plan_bi 
@@ -590,6 +603,9 @@ SELECT
 	, XX.distribuidor_crm
 	, XX.canal_transacc
 	, XX.TARIFA_FINAL_PLAN_ACT
+	, XX.descuento_tarifa_plan_act
+	, XX.tarifa_plan_actual_ov
+	, XX.descripcion_descuento_plan_act
 FROM
 	(
 	SELECT
@@ -640,6 +656,9 @@ FROM
 		, AA.distribuidor_crm
 		, AA.canal_transacc
 		, AA.TARIFA_FINAL_PLAN_ACT
+		, AA.descuento_tarifa_plan_act
+		, AA.tarifa_plan_actual_ov
+		, AA.descripcion_descuento_plan_act
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
 		, aa.TELEFONO
@@ -706,6 +725,9 @@ SELECT
 	, XX.distribuidor_crm
 	, XX.canal_transacc
 	, XX.TARIFA_FINAL_PLAN_ACT
+	, XX.descuento_tarifa_plan_act
+	, XX.tarifa_plan_actual_ov
+	, XX.descripcion_descuento_plan_act
 FROM
 	(
 	SELECT
@@ -756,6 +778,9 @@ FROM
 		, AA.distribuidor_crm
 		, AA.canal_transacc
 		, AA.TARIFA_FINAL_PLAN_ACT
+		, AA.descuento_tarifa_plan_act
+		, AA.tarifa_plan_actual_ov
+		, AA.descripcion_descuento_plan_act
 		---------------------------------------
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
@@ -818,6 +843,8 @@ SELECT
 	, XX.DES_PLAN_ANTERIOR
 	, XX.distribuidor_crm
 	, XX.TARIFA_FINAL_PLAN_ACT
+	, XX.descuento_tarifa_plan_act
+	, XX.tarifa_ov_plan_act
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	(
@@ -863,6 +890,8 @@ FROM
 		, AA.DES_PLAN_ANTERIOR
 		, AA.distribuidor_crm
 		, AA.TARIFA_FINAL_PLAN_ACT
+		, AA.descuento_tarifa_plan_act
+		, AA.tarifa_ov_plan_act
 		--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO, aa.TELEFONO
@@ -923,6 +952,8 @@ SELECT
 	, XX.DES_PLAN_ANTERIOR
 	, XX.distribuidor_crm
 	, XX.TARIFA_FINAL_PLAN_ACT
+	, XX.descuento_tarifa_plan_act
+	, XX.tarifa_ov_plan_act
 	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 FROM
 	(
@@ -968,6 +999,8 @@ FROM
 		, AA.DES_PLAN_ANTERIOR
 		, AA.distribuidor_crm
 		, AA.TARIFA_FINAL_PLAN_ACT
+		, AA.descuento_tarifa_plan_act
+		, AA.tarifa_ov_plan_act
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TIPO
 		, aa.TELEFONO
@@ -1018,6 +1051,9 @@ SELECT
 	, XX.TARIFA_FINAL_PLAN_ACT
 	, XX.TARIFA_FINAL_PLAN_ANT
 	, XX.PROVINCIA
+	, XX.descripcion_descuento_plan_act
+	, XX.descuento_tarifa_plan_act
+	, XX.tarifa_plan_actual_ov
 	-------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-------------------------------------
 FROM
 	(
@@ -1053,6 +1089,9 @@ FROM
 		, AA.TARIFA_FINAL_PLAN_ACT
 		, AA.TARIFA_FINAL_PLAN_ANT
 		, AA.PROVINCIA
+		, AA.descripcion_descuento_plan_act
+		, AA.descuento_tarifa_plan_act
+		, AA.tarifa_plan_actual_ov
 		-----------------------------------------
 		, ROW_NUMBER() OVER (
                 PARTITION BY aa.TELEFONO
@@ -1235,6 +1274,9 @@ SELECT
 	, E.TARIFA_BASICA_ANTERIOR
 	, E.FECHA_INICIO_PLAN_ANTERIOR
 	, nvl(nvl(E.TARIFA_FINAL_PLAN_ACT, A.TARIFA_FINAL_PLAN_ACT),C.TARIFA_FINAL_PLAN_ACT) as TARIFA_FINAL_PLAN_ACT
+	, nvl(nvl(E.descuento_tarifa_plan_act, A.descuento_tarifa_plan_act),C.descuento_tarifa_plan_act) as descuento_tarifa_plan_act
+	, nvl(nvl(E.tarifa_plan_actual_ov, A.tarifa_plan_actual_ov),C.tarifa_ov_plan_act) as tarifa_plan_actual_ov
+	, nvl(E.descripcion_descuento_plan_act, A.descripcion_descuento_plan_act) as descripcion_descuento_plan_act
 	, E.TARIFA_FINAL_PLAN_ANT
 	--NVL ANIADIDO PARA INCLUIR LA FECHA DE BAJA DE LAS ALTAS_BAJAS_REPROCESO
 	--, G.FECHA as  FECHA_MOVIMIENTO_BAJA

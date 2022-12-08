@@ -8,10 +8,10 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , edad double
 , mes string
 , anio string
-, segmento string
+
 , forma_pago_factura varchar(40)
 , forma_pago_alta string
-, sub_segmento string
+
 , numero_abonado string
 , identificacion_cliente string
 , customer_ref string
@@ -21,10 +21,10 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , codigo_bono string
 , probabilidad_churn double
 , counted_days int
-, categoria_plan string
+
 , tarifa double
-, nombre_plan string
-, marca string
+
+
 , grupo_prepago string
 , fidelizacion_megas string
 , fidelizacion_dumy string
@@ -50,7 +50,7 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , es_parque string
 , banco string
 , parque_recargador string
-, segmento_parque string
+
 , vencimiento_cartera string
 , saldo_cartera float
 , fecha_alta_historia date
@@ -58,10 +58,9 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , sub_canal_alta varchar(50)
 , distribuidor_alta varchar(50)
 , oficina_alta varchar(50)
-, portabilidad varchar(10)
-, operadora_origen varchar(20)
+
 , operadora_destino varchar(20)
-, motivo varchar(50)
+
 , fecha_pre_pos date
 , canal_pre_pos varchar(50)
 , sub_canal_pre_pos varchar(50)
@@ -72,28 +71,19 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , sub_canal_pos_pre varchar(50)
 , distribuidor_pos_pre varchar(50)
 , oficina_pos_pre varchar(50)
-, fecha_cambio_plan date
 , canal_cambio_plan varchar(50)
 , sub_canal_cambio_plan varchar(50)
 , distribuidor_cambio_plan varchar(50)
 , oficina_cambio_plan varchar(50)
-, cod_plan_anterior varchar(10)
-, des_plan_anterior varchar(50)
 , tb_descuento double
-, tb_override double
-, delta double
-, canal_movimiento_mes varchar(50)
-, sub_canal_movimiento_mes varchar(50)
-, distribuidor_movimiento_mes varchar(50)
-, oficina_movimiento_mes varchar(50)
-, portabilidad_movimiento_mes string
+
 , operadora_origen_movimiento_mes string
-, operadora_destino_movimiento_mes string
+
 , motivo_movimiento_mes string
 , cod_plan_anterior_movimiento_mes string
 , des_plan_anterior_movimiento_mes string
 , tb_descuento_movimiento_mes double
-, tb_override_movimiento_mes double
+
 , delta_movimiento_mes double
 , fecha_alta_cuenta date
 , fecha_inicio_pago_actual date
@@ -116,113 +106,122 @@ CREATE TABLE db_desarrollo2021.d_otc_t_360_general(
 , fecha_registro_web timestamp
 , fecha_nacimiento date comment 'fecha de nacimiento del cliente en formato yyyy-mm-dd'
 ------INSERTADO EN REFACTORING
-, id_tipo_movimiento int
-, tipo_movimiento varchar(50)
-, id_subcanal int
+
 , id_producto string
 , sub_movimiento varchar(50)
-, tecnologia char(2)
-, dias_transcurridos_baja int
-, dias_en_parque int
-, dias_en_parque_prepago int
-, tipo_descuento_conadis varchar(110)
-, tipo_descuento varchar(110)
-, ciudad varchar(50)
-, provincia_activacion varchar(50)
-, cod_categoria varchar(50)
-, cod_da varchar(50)
-, nom_usuario varchar(50)
-, provincia_ivr varchar(50)
-, provincia_ms varchar(50)
-, fecha_movimiento_baja date
-, vol_invol varchar(50)
-, account_num_anterior varchar(50)
-, imei char(14)
-, equipo varchar(110)
-, icc char(19)
-, domain_login_ow varchar(110)
-, nombre_usuario_ow varchar(110)
-, domain_login_sub varchar(110)
-, nombre_usuario_sub varchar(110)
-, forma_pago varchar(110)
-, id_canal int
-, campania varchar(110)
-, CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES varchar(110)
-, codigo_plaza varchar(110)
-, nom_plaza_movimiento_mes varchar(110)
-, region varchar(110)
-, ruc_distribuidor varchar(110)
-, ejecutivo_asignado_ptr varchar(110)
-, area_ptr varchar(110)
-, codigo_vendedor_da_ptr varchar(110)
-, jefatura_ptr varchar(110)
+
 , codigo_usuario char(9)
-, descripcion_desp varchar(50)
-, calf_riesgo char(1)
-, cap_endeu char(1)
-, valor_cred int
-, ciudad_usuario varchar(50)
-, provincia_usuario varchar(50)
-, linea_de_negocio_anterior varchar(50)
-, cliente_anterior char(15)
-, dias_reciclaje int
-, fecha_baja_reciclada date
-, tarifa_basica_anterior float
-, fecha_inicio_plan_anterior date
-, tarifa_final_plan_act float
-, tarifa_final_plan_ant float
-, mismo_cliente char(2)
-, delta_tarifa_final float
-, tipo_de_cuenta_en_operador_donante varchar(50)
-, fecha_alta_prepago date
-, TARIFA_BASICA_BAJA float
-, canal_transacc varchar(110)
-, distribuidor_crm varchar(110)
+
+
+
+
+
 --FINALIZA REFACTORING
 )
 partitioned BY (fecha_proceso bigint)
 stored AS orc
 tblproperties ('orc.compress' = 'SNAPPY');
 
-
-
+drop TABLE if exists db_desarrollo2021.otc_t_ext_movimientos;
+CREATE TABLE db_desarrollo2021.otc_t_ext_movimientos
+(
 id_producto string
 , linea_negocio string
 , telefono string
 , numero_abonado string
 , account_num string
-, fecha_movimiento date
+, fecha_movimiento string
 , estado_abonado string
 , cliente string
 , DOCUMENTO_CLIENTE string
 , tipo_doc_cliente string
-CODIGO_PLAN
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+, PLAN_CODIGO string
+, nombre_plan string
+, ciudad varchar(50)
+, provincia varchar(50)
+, imei char(14)
+, equipo varchar(110)
+, icc char(19)
+, sub_segmento string
+, segmento string
+, SEGMENTO_FIN string
+, FECHA_PROCESO string
+, TARIFA_BASICA_ACTUAL double
+, categoria_plan string
+, cod_categoria varchar(50)
+, domain_login_ow varchar(110)
+, nombre_usuario_ow varchar(110)
+, domain_login_sub varchar(110)
+, nombre_usuario_sub varchar(110)
+, canal varchar(110)
+, distribuidor varchar(110)
+, oficina varchar(50)
+, portabilidad_alta varchar(10)
+, forma_pago varchar(110)
+, cod_da varchar(50)
+, nom_usuario varchar(50)
+, id_canal int
+, canal_comercial varchar(50)
+, campania varchar(110)
+, CODIGO_DISTRIBUIDOR varchar(110)
+, NOM_DISTRIBUIDOR varchar(50)
+, codigo_plaza varchar(110)
+, nom_plaza varchar(110)
+, region varchar(110)
+, ruc_distribuidor varchar(110)
+, provincia_ivr varchar(50)
+, operadora_origen varchar(20)
+, ejecutivo_asignado_ptr varchar(110)
+, area_ptr varchar(110)
+, codigo_vendedor_da_ptr varchar(110)
+, jefatura_ptr varchar(110)
+, NOM_EMAIL string
+, provincia_ms varchar(50)
+, ID_SUB_CANAL int
+, sub_canal varchar(50)
+, OVERWRITE double
+, descuento double
+, codigo_usuario char(9)
+, marca string
+, TECNO_DISPOSITIVO char(2)
+, descripcion_desp varchar(50)
+, calf_riesgo char(1)
+, cap_endeu char(1)
+, valor_cred int
+, fecha_movimiento_baja date
+, MOVIMIENTO_BAJA varchar(50)
+, dias_transcurridos_baja int
+, fecha_cambio string
+, linea_de_negocio_anterior varchar(50)
+, dias_en_parque int
+, id_tipo_movimiento int
+, tipo_movimiento varchar(50)
+, CODIGO_PLAN_ANTERIOR varchar(10)
+, cliente_anterior char(15)
+, NOMBRE_PLAN_ANTERIOR varchar(50)
+, tarifa_basica_anterior float
+, fecha_inicio_plan_anterior string
+, DELTA_TARIFA double
+, dias_reciclaje int
+, tipo_descuento varchar(110)
+, tipo_descuento_conadis varchar(110)
+, dias_en_parque_prepago int
+, vol_invol varchar(50)
+, TARIFA_BASICA_BAJA float
+, PORTABILIDAD_BAJA string
+, OPERADORA_DESTINO string
+, account_num_anterior varchar(50)
+, ciudad_usuario varchar(50)
+, provincia_usuario varchar(50)
+, mismo_cliente char(2)
+, fecha_alta_prepago string
+, TARIFA_PLAN_ACTUAL_OV double
+, fecha_baja_reciclada string
+, tarifa_final_plan_act float
+, tarifa_final_plan_ant float
+, delta_tarifa_final float
+, tipo_de_cuenta_en_operador_donante varchar(50)
+, id_hash string
+)
+COMMENT 'Tabla particionada en Hive con la informacion de Extractor de Movimientos'
+PARTITIONED BY (pt_fecha bigint);
