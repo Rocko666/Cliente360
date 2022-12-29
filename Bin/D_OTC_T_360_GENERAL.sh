@@ -28,7 +28,7 @@ PASO=$2
 #PARAMETROS GENERICOS
 VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_CADENA_JDBC';"`
 VAL_COLA_EJECUCION=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_COLA_EJECUCION';"`
-VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_OTC_T_360_GENERAL' AND parametro = 'VAL_USER';"`
+VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_CLI360CLI00100' AND parametro = 'VAL_USER';"`
 
 #*****************************************************************************************************#
 #                                            ¡¡ ATENCION !!                                           #
@@ -348,7 +348,7 @@ if [ "$PASO" = "3" ]; then
 	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
 	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_port_ini=${fecha_port_ini} \
 	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} --hivevar ESQUEMA_REPORTES=${ESQUEMA_REPORTES} \
-	--hivevar fecha_port_fin=${fecha_port_fin} \
+	--hivevar fecha_port_fin=${fecha_port_fin} --hivevar fecha_inico_mes_1_1=${fecha_inico_mes_1_1} \
 	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo
 		if [ $? -eq 0 ]; then

@@ -7,12 +7,122 @@ SET hive.vectorized.execution.enabled = FALSE;
 
 SET hive.vectorized.execution.reduce.enabled = FALSE;
 
--- CREACION DE TABLA TEMPORAL PARA DESPACHOS
-DROP TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final;
+--tabla temporal para obtener el ultimo descuento por min
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_otc_t_desc_planes;
 
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final AS
+CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES AS 
+SELECT
+	*
+	, (case when upper(descripcion_descuento) LIKE '%CONADIS%' THEN 'CONADIS'
+			WHEN upper(descripcion_descuento) LIKE '%ADULTO%MAYOR%' THEN 'CONADIS' end ) as desc_conadis
+FROM
+	(
 	SELECT
 		*
+		, ROW_NUMBER() OVER (PARTITION BY phone_number
+	ORDER BY
+		to_date(created_when_orden) DESC) rn
+	FROM
+		${ESQUEMA_CS_ALTAS}.otc_t_descuentos_planes
+	WHERE
+		p_FECHA_PROCESO = ${fechamas1}
+	AND to_date(created_when_orden) between '${fecha_inico_mes_1_1}' and '${fecha_eje1}'
+	--and TIPO_PROCESO_ESP  <> 'Suspender'
+	and (TIPO_PROCESO_ESP  <>  'Suspender' or  TIPO_PROCESO_ESP is null)
+	) t1
+WHERE
+	rn = 1;
+
+--tabla temporal para obtener el ultimo overwrite por min
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_otc_t_ov_planes;
+
+CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_ov_PLANES AS 
+SELECT
+	*
+FROM
+	(
+	SELECT
+		*
+		, ROW_NUMBER() OVER (PARTITION BY phone_number
+	ORDER BY
+		to_date(created_when_orden) DESC) rn
+	FROM
+		${ESQUEMA_CS_ALTAS}.otc_t_overwrite_planes
+	WHERE
+		p_FECHA_PROCESO = ${fechamas1}
+	AND to_date(created_when_orden) between '${fecha_inico_mes_1_1}' and '${fecha_eje1}'
+	--and TIPO_PROCESO_ESP  NOT in ('Suspender')
+	) t1
+WHERE
+	rn = 1;
+
+-- TABLA TEMPORAL PERIMETROS ALTAS Y TRASNFER IN
+DROP TABLE ${ESQUEMA_TEMP}.tmp_PRMT_ALTA_TI;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_PRMT_ALTA_TI AS
+select 
+identificador
+,razon_social
+,fecha_ingreso
+,ejecutivo_asignado
+,correo_ejecutivo_asignado
+,area
+,codigo_vendedor_da
+,jefatura
+,red_jefe
+,tipopersona
+,tiposegmentacion
+,tiporuc
+,region
+,fecha_carga
+,pt_fecha
+FROM db_desarrollo2021.OTC_T_PRMTR_ALTAS_TI 
+WHERE pt_fecha=${FECHAEJE};
+
+--TABLA TEMPORAL PERIMETROS BAJAS Y TRANSFER OUT 
+DROP TABLE ${ESQUEMA_TEMP}.tmp_PRMT_BAJA_TO;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_PRMT_BAJA_TO AS
+select 
+identificador
+,razon_social
+,fecha_ingreso
+,ejecutivo_asignado
+,correo_ejecutivo_asignado
+,area
+,codigo_vendedor_da
+,jefatura
+,region
+,fecha_carga
+,pt_fecha
+FROM db_desarrollo2021.OTC_T_PRMTR_BAJAS_TO
+WHERE pt_fecha=${FECHAEJE};
+
+-- creacion de tabla temporal de descuentos no pymes
+DROP TABLE ${ESQUEMA_TEMP}.tmp_desc_no_pymes;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_desc_no_pymes AS
+select telefono
+,plan_codigo
+,descuento
+,fecha_proceso
+,fecha_carga
+, detalle
+from db_desarrollo2021.OTC_T_DESC_NO_PYMES
+WHERE fecha_proceso = '${fecha_eje1}';
+
+-- CREACION DE TABLA TEMPORAL PARA DESPACHOS
+DROP TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_desp_nc_final AS
+	SELECT
+		ICC
+		, NO_MIN
+		, (case when DESCRIPCION like'%HALFSIM CHIP PREPAGO $5 AUTOSERVICIO NUMERADO 15D%' then 'HALFSIM CHIP PREPAGO $5 AUTOSERVICIO NUMERADO 15DIAS'
+				when DESCRIPCION like'%HALFSIM CHIP PREPAGO $5 NUMERADO 15 D%' then 'HALFSIM CHIP PREPAGO $5 NUMERADO 15 DIAS'
+				when DESCRIPCION like'%HALFSIM TUENTI PREPAGO CELOF%N NUMERADA%' then 'HALFSIM TUENTI PREPAGO CELOFAN NUMERADA'
+				when DESCRIPCION like'%USIM TUENTI PREPAGO BL%STER NUMERADA $20.00%' then 'USIM TUENTI PREPAGO BLISTER NUMERADA $20.00'
+				when DESCRIPCION like'%USIM TUENTI PREPAGO BL%STER NUMERADA $10.00%' then 'USIM TUENTI PREPAGO BLISTER NUMERADA $10.00'
+				ELSE DESCRIPCION END) as DESCRIPCION
+		, CODIGO_despacho
+		, cliente
+		, operadora
 FROM
 		${ESQUEMA_CS_ALTAS}.despachos_nc_final
 WHERE
@@ -24,7 +134,12 @@ WHERE
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal;
 CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal AS 
 SELECT
-	*
+	tipo_movimiento
+	,id_tipo_movimiento
+	,nombre_id
+	,extractor
+	,crite
+	,fechacarga
 FROM
 	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
@@ -35,7 +150,12 @@ WHERE
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal;
 CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal AS 
 SELECT
-	*
+	tipo_movimiento
+	,id_tipo_movimiento
+	,nombre_id
+	,extractor
+	,crite
+	,fechacarga
 FROM
 	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
@@ -46,7 +166,12 @@ WHERE
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto;
 CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto AS 
 SELECT
-	*
+	tipo_movimiento
+	,id_tipo_movimiento
+	,nombre_id
+	,extractor
+	,crite
+	,fechacarga
 FROM
 	${ESQUEMA_REPORTES}.otc_t_catalogo_consolidado_id
 WHERE
@@ -110,6 +235,21 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
 	and requeststatus in ('Approved','Partially Rejected','Pending in ASCP')
 	--and UPPER(estado)<>'RECHAZADO'
 ; 
+
+
+DROP TABLE ${ESQUEMA_TEMP}.tmp_FECHA_ALTA_POS_HIST;
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_FECHA_ALTA_POS_HIST AS
+select telefono
+, CAST(FECHA_ALTA AS date) AS FECHA_ALTA
+,linea_negocio_homologado
+,TIPO_MOVIMIENTO_MES
+, datediff(fecha_movimiento_mes, fecha_alta) as dias_transcurridos_baja
+,cliente
+from ${ESQUEMA_TEMP}.otc_t_360_general_temp_final 
+where linea_negocio_homologado='POSPAGO'
+and TIPO_MOVIMIENTO_MES = 'TRANSFER_OUT'
+and ES_PARQUE ='NO';
+
 -- tabla final OTC_T_360_GENERAL
 INSERT
 	overwrite TABLE db_desarrollo2021.d_otc_t_360_general PARTITION(fecha_proceso)
@@ -229,10 +369,10 @@ t1.telefono AS num_telefonico
 	, A2.TB_DESCUENTO AS TB_DESCUENTO
 	, A2.TB_OVERRIDE
 	, A2.DELTA
-	, nvl(A1.CANAL_MOVIMIENTO_MES, A1.CANAL_COMERCIAL) as CANAL_MOVIMIENTO_MES
-	, nvl (A1.SUB_CANAL_MOVIMIENTO_MES, a1.sub_canal) as SUB_CANAL_MOVIMIENTO_MES
+	, A1.CANAL_COMERCIAL as CANAL_MOVIMIENTO_MES
+	, a1.sub_canal as SUB_CANAL_MOVIMIENTO_MES
 	--, A1.NUEVO_SUB_CANAL_MOVIMIENTO_MES
-	, nvl (A1.DISTRIBUIDOR_MOVIMIENTO_MES, A1.NOM_DISTRIBUIDOR) as DISTRIBUIDOR_MOVIMIENTO_MES
+	, A1.NOM_DISTRIBUIDOR as DISTRIBUIDOR_MOVIMIENTO_MES
 	, A1.OFICINA_MOVIMIENTO_MES
 	, A1.PORTABILIDAD_MOVIMIENTO_MES
 	, A1.OPERADORA_ORIGEN_MOVIMIENTO_MES
@@ -296,14 +436,15 @@ t1.telefono AS num_telefonico
 	, cat_p.ID_TIPO_MOVIMIENTO AS id_producto
 	, A1.SUB_MOVIMIENTO
 	, TEC.TECNOLOGIA
-	, datediff(t1.fecha_alta, A2.FECHA_MOVIMIENTO_BAJA) AS DIAS_TRANSCURRIDOS_BAJA
+	, (CASE WHEN A1.TIPO in ('BAJA') THEN datediff(A2.FECHA_MOVIMIENTO_BAJA, t1.fecha_alta)
+			WHEN A1.TIPO in ('POS_PRE') THEN FAPH.dias_transcurridos_baja END) AS DIAS_TRANSCURRIDOS_BAJA
 	, A2.DIAS_EN_PARQUE
 	, A2.DIAS_EN_PARQUE_PREPAGO
 	, (CASE
-		WHEN upper(A2.descripcion_descuento_plan_act) LIKE '%CONADIS%' THEN 'CONADIS'
-		WHEN upper(A2.descripcion_descuento_plan_act) LIKE '%ADULTO%MAYOR%' THEN 'NO_PYMES'
+		when A1.TIPO IN ('ALTA','PRE_POS') then  nvl(DNPY.DETALLE, DESCU.desc_conadis)
+		WHEN A1.TIPO IN ('DOWNSELL','UPSELL','MISMA_TARIFA') THEN DESCU.desc_conadis
 		ELSE ''	END) AS TIPO_DESCUENTO_CONADIS
-	, A2.descripcion_descuento_plan_act AS TIPO_DESCUENTO
+	, (CASE	when A1.TIPO IN ('ALTA','PRE_POS','DOWNSELL','UPSELL','MISMA_TARIFA') THEN DESCU.descripcion_descuento END) AS TIPO_DESCUENTO
 	, A1.CIUDAD
 	, A1.PROVINCIA_ACTIVACION
 	, A2.COD_CATEGORIA
@@ -311,7 +452,8 @@ t1.telefono AS num_telefonico
 	, A1.NOM_USUARIO
 	, A2.PROVINCIA_IVR
 	, A2.PROVINCIA_MS
-	, A2.FECHA_MOVIMIENTO_BAJA
+	, (CASE WHEN A1.TIPO in ('BAJA') THEN cast(t1.fecha_alta as date)
+			WHEN A1.TIPO in ('POS_PRE') THEN FAPH.FECHA_ALTA END)  AS FECHA_ALTA_POSPAGO_HISTORICA
 	, A2.VOL_INVOL
 	, A2.ACCOUNT_NUM_ANTERIOR
 	--, A1.FECHA_MOVIMIENTO_MES
@@ -325,16 +467,20 @@ t1.telefono AS num_telefonico
 	--, A1.OFICINA_MOVIMIENTO_MES
 	, A1.FORMA_PAGO
 	, cat_c.id_tipo_movimiento AS id_canal
-	, A1.CAMPANIA
-	, nvl (A1.CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES, A1.CODIGO_DISTRIBUIDOR) as CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES
+	, A1.CAMPANIA_HOMOLOGADA AS CAMPANIA
+	, A1.CODIGO_DISTRIBUIDOR as CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES
 	, A1.CODIGO_PLAZA
-	, nvl (A1.nom_plaza_MOVIMIENTO_MES, A1.NOM_PLAZA) as nom_plaza_MOVIMIENTO_MES
-	, A1.REGION
+	, A1.NOM_PLAZA as nom_plaza_MOVIMIENTO_MES
+	, A1.REGION_HOMOLOGADA AS REGION 
 	, A1.RUC_DISTRIBUIDOR
-	, A1.EJECUTIVO_ASIGNADO_PTR
-	, A1.AREA_PTR
-	, A1.CODIGO_VENDEDOR_DA_PTR
-	, A1.JEFATURA_PTR
+	, (case when A1.TIPO IN ('ALTA','PRE_POS') then PATI.EJECUTIVO_ASIGNADO
+			when A1.TIPO in ('BAJA','POS_PRE') then PBTO.EJECUTIVO_ASIGNADO end) as EJECUTIVO_ASIGNADO_PTR
+	, (case when A1.TIPO IN ('ALTA','PRE_POS') then PATI.AREA
+			when A1.TIPO in ('BAJA','POS_PRE') then PBTO.AREA end) AS AREA_PTR
+	, (case when A1.TIPO IN ('ALTA','PRE_POS') then PATI.CODIGO_VENDEDOR_DA
+			when A1.TIPO in ('BAJA','POS_PRE') then PBTO.CODIGO_VENDEDOR_DA end) AS CODIGO_VENDEDOR_DA_PTR
+	, (case when A1.TIPO IN ('ALTA','PRE_POS') then PATI.JEFATURA
+			when A1.TIPO in ('BAJA','POS_PRE') then PBTO.JEFATURA end) AS JEFATURA_PTR
 	, A1.CODIGO_USUARIO
 	, desp.DESCRIPCION AS DESCRIPCION_DESP
 	, A1.CALF_RIESGO
@@ -348,7 +494,10 @@ t1.telefono AS num_telefonico
 	, A2.FECHA_BAJA_RECICLADA
 	, A2.TARIFA_BASICA_ANTERIOR
 	, A2.FECHA_INICIO_PLAN_ANTERIOR
-	, A2.TARIFA_FINAL_PLAN_ACT
+	, (case when A1.TIPO IN ('PRE_POS','DOWNSELL','UPSELL','MISMA_TARIFA') THEN (nvl(t1.tarifa, OVW.MRC_OV_PRICE) - nvl(DESCU.discount_value, 0))
+			WHEN A1.TIPO IN ('ALTA') then (nvl(t1.tarifa, OVW.MRC_BASE_PRICE) - nvl(DESCU.discount_value, 0)) end) as TARIFA_FINAL_PLAN_ACT
+	--, A2.TARIFA_FINAL_PLAN_ACT
+	--, (case when A1.TIPO IN ('DOWNSELL','UPSELL','MISMA_TARIFA') THEN (A2.TARIFA_BASICA_ANTERIOR-) ) 
 	, A2.TARIFA_FINAL_PLAN_ANT
 	, A2.MISMO_CLIENTE
 	, (A2.TARIFA_FINAL_PLAN_ACT - A2.TARIFA_FINAL_PLAN_ANT) AS DELTA_TARIFA_FINAL
@@ -360,8 +509,9 @@ t1.telefono AS num_telefonico
 	, (case when UPPER(t1.es_parque) = 'NO' THEN t1.tarifa END) AS TARIFA_BASICA_BAJA
 	, A1.canal_transacc
 	, A1.distribuidor_crm
-	, A2.descuento_tarifa_plan_act
-	, A2.tarifa_plan_actual_ov
+	, (CASE	when A1.TIPO IN ('ALTA','PRE_POS','DOWNSELL','UPSELL','MISMA_TARIFA') THEN DESCU.discount_value END) AS DESCUENTO_TARIFA_PLAN_ACT
+	, (CASE	when A1.TIPO IN ('PRE_POS','DOWNSELL','UPSELL','MISMA_TARIFA') THEN OVW.mrc_ov_price
+			WHEN A1.TIPO IN ('ALTA') THEN OVW.MRC_BASE_PRICE END) AS tarifa_plan_actual_ov
 	-------------------------------------
 	---------FIN REFACTORING
 	-------------------------------------
@@ -415,13 +565,27 @@ LEFT JOIN ${ESQUEMA_TEMP}.tmp_desp_nc_final desp ON
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in SPI ON
 	t1.TELEFONO = SPI.telefono
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_canal cat_c ON
-	upper(nvl(A1.CANAL_MOVIMIENTO_MES, A1.CANAL_COMERCIAL)) = upper(cat_c.tipo_movimiento)
+	upper(A1.CANAL_COMERCIAL) = upper(cat_c.tipo_movimiento)
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_sub_canal cat_sc ON
-	upper(nvl (A1.SUB_CANAL_MOVIMIENTO_MES, a1.sub_canal)) = upper(cat_sc.tipo_movimiento)
+	upper(a1.sub_canal) = upper(cat_sc.tipo_movimiento)
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_producto cat_p ON
 	upper(A1.SUB_MOVIMIENTO) = rtrim(upper(cat_p.tipo_movimiento))
 LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_cat_id_tipo_mov cat_tm ON
 	upper(A1.tipo) = upper(cat_tm.auxiliar)
+LEFT JOIN  ${ESQUEMA_TEMP}.tmp_desc_no_pymes DNPY ON
+	t1.TELEFONO = DNPY.TELEFONO
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_PRMT_ALTA_TI PATI ON
+	(t1.identificacion_cliente = PATI.identificador)
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_PRMT_BAJA_TO PBTO ON
+	(t1.identificacion_cliente = PBTO.identificador)
+LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_DESC_PLANES DESCU ON
+	(t1.TELEFONO = DESCU.phone_number)
+	and (DESCU.tariff_plan_id=t1.codigo_plan)
+LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_OV_PLANES OVW ON
+	(t1.TELEFONO = OVW.phone_number)
+	and (OVW.tariff_plan_id=t1.codigo_plan)
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_FECHA_ALTA_POS_HIST FAPH ON
+	(FAPH.TELEFONO=t1.TELEFONO)
 ----------/\/\/\/\/\/\/\/\/\/\/\/\-----------------
 ----------FIN DE REFACTORING-------------------
 ;

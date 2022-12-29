@@ -122,7 +122,7 @@ LOGS=$VAL_RUTA/Log
 #PARAMETROS GENERICOS BEELINE
 VAL_CADENA_JDBC=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_CADENA_JDBC';"`
 VAL_COLA_EJECUCION=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_PARAM_BEELINE' AND parametro = 'VAL_COLA_EJECUCION';"`
-VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_OTC_T_360_MOVIMIENTOS_PARQUE' AND parametro = 'VAL_USER';"`
+VAL_USER=`mysql -N  <<<"select valor from params_des where ENTIDAD = 'D_CLI360CLI00180' AND parametro = 'VAL_USER';"`
 
 #------------------------------------------------------
 # VERIFICACION INICIAL 
