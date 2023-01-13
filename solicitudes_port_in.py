@@ -17,6 +17,8 @@ spark = SparkSession\
     .builder\
     .appName("PROCESO")\
     .master("yarn")\
+    .config("hive.exec.dynamic.partition", "true")\
+    .config("hive.exec.dynamic.partition.mode", "nonstrict")\
     .enableHiveSupport()\
     .getOrCreate()
     
@@ -75,7 +77,7 @@ join R_BOE_SALES_ORD o on o.object_id = a.sales_order
 left join R_USR_USERS u1 on u1.object_id = o.submitted_by
 left join R_BOE_ORD_ITEM oi on oi.parent_id = a.sales_order and oi.phone_number = ri.object_id)
 """
-
+## where a.created_when >= to_date('010322','ddmmyy') and  a.created_when < to_date('311222','ddmmyy')
 
 df0 = spark.read.format("jdbc")\
     .option("url",vUrl)\
@@ -89,11 +91,14 @@ df0.printSchema()
 
 #df1 = df0.filter(df0.FVC > '01/06/2022')
 
-df0.repartition(20).write.format('hive').format("parquet").mode("overwrite").saveAsTable('db_desarrollo2021.sol_port_in_2')
+df0.repartition(20).write.format('hive').format("parquet").mode("overwrite").saveAsTable('db_desarrollo2021.sol_port_in_3')
 
-df0.show(5)
+#df0.show(5)
 
 spark.stop()
 timeend = datetime.datetime.now()
 duracion = timeend - timestart
 print("Duracion {}".format(duracion))
+
+#/usr/hdp/current/spark2-client/bin/pyspark --master yarn --executor-memory 16G --num-executors 10 --executor-cores 2 --driver-memory 2G --jars /home/nae108834/D_SOLICITUDES_PORT_IN/lib/ojdbc8.jar
+

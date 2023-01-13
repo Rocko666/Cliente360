@@ -228,7 +228,7 @@ CREATE TABLE ${ESQUEMA_TEMP}.tmp_rdb_solic_port_in AS
 	,requeststatus
 	,doc_number
 	--LA SIGUIENTE TABLA FUE TRAIDA DESDE ORACLE CON SPARK CON EL QUERY DE CARLOS CASTILLO
-	FROM db_desarrollo2021.sol_port_in_2
+	FROM db_desarrollo2021.sol_port_in_3
 	--FROM db_desarrollo2021.r_om_portin_co 
 	--cambiar por la tabla generada en el proceso SOLICITUDES DE PORTABILIDAD IN en SPARK con tablas de hive
 	WHERE nvl(salesorderprocesseddate, created_when) BETWEEN '${fecha_port_ini}' AND '${fecha_port_fin}'

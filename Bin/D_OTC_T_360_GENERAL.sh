@@ -255,7 +255,7 @@ fecha_no_reciclable=`date '+%Y-%m-%d' -d "$FECHAEJE"`
 let fecha_n_r=$fecha_no_reciclable
 fecha_mes_desp=`date -d "$FECHAEJE-1 month" "+%Y%m"`
 fecha_port_ini=`date -d "$FECHAEJE-2 month" "+%Y-%m-%d"`
-fecha_port_fin=`date -d "$FECHAEJE" "+%Y-%m-%d"`
+fecha_port_fin=`date -d "$FECHAEJE+1 day" "+%Y-%m-%d"`
 #------------------------------------------------------
 # CREACION DE LOGS 
 #------------------------------------------------------
