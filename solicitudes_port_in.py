@@ -39,6 +39,23 @@ vClass="oracle.jdbc.driver.OracleDriver"
 vUsuario="rdb_reportes"
 vClave="TelfEcu2017"
 
+qry = """
+select 
+a.telefono
+,a.numero_abonado
+,a.fecha_alta
+from db_cs_altas.otc_t_altas_bi a	 
+where a.p_fecha_proceso = 20230117
+and a.marca='TELEFONICA'
+"""
+
+df_a = spark.sql(qry)
+df_a.count()
+
+
+
+
+
 query = """ 
 (select   case when cr.cust_acct_number is null then cb.cust_acct_number else cr.cust_acct_number end as CustomerAccountNumber,
 case when cr.doc_number is null then cb.doc_number else cr.doc_number end doc_number,
