@@ -313,10 +313,19 @@ if [ "$PASO" = "2" ]; then
  # Inicio del marcado de tiempo para la tarea actual
 	INICIO=$(date +%s)
 	echo "==== Ejecucion D_OTC_T_360_GENERAL_1.sql ====" >> $LOGS/$EJECUCION_LOG.log
-	beeline -u $VAL_CADENA_JDBC -n $VAL_USER --hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
-	--hiveconf hive.auto.convert.sortmerge.join=true --hiveconf hive.optimize.bucketmapjoin=true --hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
-	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fechamas1=${fechamas1} --hivevar FECHAEJE=${FECHAEJE} --hivevar fechamenos1mes=${fechamenos1mes} --hivevar fechamenos2mes=${fechamenos2mes} \
-	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
+	beeline -u $VAL_CADENA_JDBC -n $VAL_USER 
+	--hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
+	--hiveconf hive.auto.convert.sortmerge.join=true 
+	--hiveconf hive.optimize.bucketmapjoin=true 
+	--hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
+	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} 
+	--hivevar fechamas1=${fechamas1} 
+	--hivevar FECHAEJE=${FECHAEJE} 
+	--hivevar fechamenos1mes=${fechamenos1mes} 
+	--hivevar fechamenos2mes=${fechamenos2mes} \
+	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} 
+	--hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} 
+	--hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
 	-f ${VAL_RUTA}/sql/$VAL_SQL_1 2>> $LOGS/$EJECUCION_LOG.log 
 	
    # Verificacion de creacion tabla external
@@ -342,13 +351,26 @@ if [ "$PASO" = "3" ]; then
 	INICIO=$(date +%s)
 	echo "HIVE: $rc INICIO EJECUCION del INSERT en HIVE" $PASO
 	echo "==== Ejecucion D_OTC_T_360_GENERAL_2.sql ====" >> $LOGS/$EJECUCION_LOG.log
-	beeline -u $VAL_CADENA_JDBC -n $VAL_USER --hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
-	--hiveconf hive.auto.convert.sortmerge.join=true --hiveconf hive.optimize.bucketmapjoin=true --hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
-	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fechamas1=${fechamas1} --hivevar FECHAEJE=${FECHAEJE} --hivevar fechamenos1mes=${fechamenos1mes} --hivevar fechamenos2mes=${fechamenos2mes} \
-	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} --hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} --hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
-	--hivevar fecha_mes_desp=${fecha_mes_desp} --hivevar fecha_port_ini=${fecha_port_ini} \
-	--hivevar fecha_eje1=${fecha_eje1} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} --hivevar ESQUEMA_REPORTES=${ESQUEMA_REPORTES} \
-	--hivevar fecha_port_fin=${fecha_port_fin} --hivevar fecha_inico_mes_1_1=${fecha_inico_mes_1_1} \
+	beeline -u $VAL_CADENA_JDBC -n $VAL_USER 
+	--hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
+	--hiveconf hive.auto.convert.sortmerge.join=true 
+	--hiveconf hive.optimize.bucketmapjoin=true 
+	--hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
+	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} 
+	--hivevar fechamas1=${fechamas1} 
+	--hivevar FECHAEJE=${FECHAEJE} 
+	--hivevar fechamenos1mes=${fechamenos1mes} 
+	--hivevar fechamenos2mes=${fechamenos2mes} \
+	--hivevar ESQUEMA_TABLA_1=${ESQUEMA_TABLA_1} 
+	--hivevar ESQUEMA_TABLA_3=${ESQUEMA_TABLA_3} 
+	--hivevar ESQUEMA_TABLA_2=${ESQUEMA_TABLA_2} \
+	--hivevar fecha_mes_desp=${fecha_mes_desp} 
+	--hivevar fecha_port_ini=${fecha_port_ini} \
+	--hivevar fecha_eje1=${fecha_eje1} 
+	--hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} 
+	--hivevar ESQUEMA_REPORTES=${ESQUEMA_REPORTES} \
+	--hivevar fecha_port_fin=${fecha_port_fin} 
+	--hivevar fecha_inico_mes_1_1=${fecha_inico_mes_1_1} \
 	-f ${VAL_RUTA}/sql/$VAL_SQL_2 2>> $LOGS/$EJECUCION_LOG.log
 		# Verificacion de creacion de archivo
 		if [ $? -eq 0 ]; then

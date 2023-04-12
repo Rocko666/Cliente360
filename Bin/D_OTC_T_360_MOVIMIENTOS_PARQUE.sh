@@ -239,14 +239,21 @@ if [ "$PASO" = "2" ]; then
 	echo "==== Empieza la ejecucion D_OTC_T_360_MOVIMIENTOS_PARQUE.sql ====" >> $LOGS/$EJECUCION_LOG.log
 	beeline -u $VAL_CADENA_JDBC -n $VAL_USER --hiveconf tez.queue.name=$VAL_COLA_EJECUCION \
 	--hiveconf hive.auto.convert.sortmerge.join=true --hiveconf hive.optimize.bucketmapjoin=true --hiveconf hive.optimize.bucketmapjoin.sortedmerge=true \
-	--hivevar ESQUEMA_TABLA=${ESQUEMA_TABLA} --hivevar f_inicio=${f_inicio} --hivevar fecha_proceso=${fecha_proceso} \
-	--hivevar fecha_movimientos_cp=${fecha_movimientos_cp} --hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} --hivevar fecha_movimientos=${fecha_movimientos} \
-	--hivevar TABLA_PIVOTANTE=${TABLA_PIVOTANTE} --hivevar VAL_COLA_EJECUCION=${VAL_COLA_EJECUCION} --hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} \
+	--hivevar ESQUEMA_TABLA=${ESQUEMA_TABLA} \
+	--hivevar ESQUEMA_TEMP=${ESQUEMA_TEMP} \
+	--hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
+	--hivevar TABLA_PIVOTANTE=${TABLA_PIVOTANTE} \
+	--hivevar VAL_COLA_EJECUCION=${VAL_COLA_EJECUCION} \
+	--hivevar f_inicio=${f_inicio} \
+	--hivevar fecha_proceso=${fecha_proceso} \
+	--hivevar fecha_movimientos=${fecha_movimientos} \
+	--hivevar fecha_movimientos_cp=${fecha_movimientos_cp} \
+	--hivevar fecha_mes_ant_cp=${fecha_mes_ant_cp} \
 	--hivevar fecha_mes_ant=${fecha_mes_ant} \
-	--hivevar fecha_mes_ant_cp=${fecha_mes_ant_cp} --hivevar ESQUEMA_CS_ALTAS=${ESQUEMA_CS_ALTAS} \
-	--hivevar f_inicio_abr=${f_inicio_abr} --hivevar f_fin_abr=${f_fin_abr} \
+	--hivevar f_inicio_abr=${f_inicio_abr} \
+	--hivevar f_fin_abr=${f_fin_abr} \
 	--hivevar f_efectiva=${f_efectiva} \
-	-f ${VAL_RUTA}/sql/OTC_T_360_MOVIMIENTOS_PARQUE.sql &>> $LOGS/$EJECUCION_LOG.log
+	-f ${VAL_RUTA}/sql/OTC_T_360_MOVIMIENTOS_PARQUE.sql 2>&1 &>> $LOGS/$EJECUCION_LOG.log
 
 				# Verificacion de creacion tabla external
 	if [ $? -eq 0 ]; then

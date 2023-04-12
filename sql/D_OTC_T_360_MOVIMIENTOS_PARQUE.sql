@@ -6,48 +6,55 @@ SET hive.vectorized.execution.enabled = FALSE;
 SET hive.vectorized.execution.reduce.enabled = FALSE;
 --SE CAMBIO EN RF
 SET tez.queue.name = ${VAL_COLA_EJECUCION};
+
+
+
+--N01
 --ELIMINA LA DATA PRE EXISTENTE
 DELETE
 FROM
 	${ESQUEMA_TABLA}.otc_t_alta_baja_hist
 WHERE
-	TIPO = 'ALTA'
-	AND FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}';
---INSERTA LA DATA DEL MES
+	tipo = 'ALTA'
+	AND fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
+
+	
+--INSERTA LAs altas DEL MES
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_HIST
+	${ESQUEMA_TABLA}.otc_t_alta_baja_hist
 SELECT 
-	'ALTA' AS TIPO
-	, TELEFONO
-	, FECHA_ALTA AS FECHA
-	, CANAL_COMERCIAL AS CANAL
-	, SUB_CANAL
-	, CAST( NULL AS STRING) AS NUEVO_SUB_CANAL
-	, PORTABILIDAD
-	, Operadora_origen
-	, 'MOVISTAR (OTECEL)' AS Operadora_destino
+	'ALTA' AS tipo
+	, telefono
+	, fecha_alta AS fecha
+	, canal_comercial AS canal
+	, sub_canal
+	, CAST( NULL AS STRING) AS nuevo_sub_canal
+	, portabilidad
+	, operadora_origen
+	, 'MOVISTAR (OTECEL)' AS operadora_destino
 	, CAST( NULL AS STRING) AS motivo
-	, NOM_DISTRIBUIDOR AS DISTRIBUIDOR
-	, OFICINA
-	--INSERTADO EN RF----------------------------
+	, nom_distribuidor AS distribuidor
+	, oficina
+	--INSERTADO COMISIONES  BIGD-677----------------------------
 	, CASE
-		WHEN LINEA_NEGOCIO LIKE '%H%BRIDO'
-		AND upper(PORTABILIDAD)= 'NO' THEN 'ALTA POSPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%POSPAGO%'
-		AND upper(PORTABILIDAD)= 'NO' THEN 'ALTA POSPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%POSPAGO%'
-		AND upper(PORTABILIDAD)= 'SI' THEN 'ALTA PORTABILIDAD POSPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%POSPAGO%'
-		AND upper(PORTABILIDAD)= 'INTRA' THEN 'ALTA PORTABILIDAD POSPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%PREPAGO%'
-		AND upper(PORTABILIDAD)= 'NO' THEN 'ALTA PREPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%PREPAGO%'
-		AND upper(PORTABILIDAD)= 'SI' THEN 'ALTA PORTABILIDAD PREPAGO'
-		WHEN LINEA_NEGOCIO LIKE '%PREPAGO%'
-		AND upper(PORTABILIDAD)= 'INTRA' THEN 'ALTA PORTABILIDAD PREPAGO'
+		WHEN linea_negocio LIKE '%H%BRIDO'
+		AND upper(portabilidad)= 'NO' THEN 'ALTA POSPAGO'
+		WHEN linea_negocio LIKE '%POSPAGO%'
+		AND upper(portabilidad)= 'NO' THEN 'ALTA POSPAGO'
+		WHEN linea_negocio LIKE '%POSPAGO%'
+		AND upper(portabilidad)= 'SI' THEN 'ALTA PORTABILIDAD POSPAGO'
+		WHEN linea_negocio LIKE '%POSPAGO%'
+		AND upper(portabilidad)= 'INTRA' THEN 'ALTA PORTABILIDAD POSPAGO'
+		WHEN linea_negocio LIKE '%PREPAGO%'
+		AND upper(portabilidad)= 'NO' THEN 'ALTA PREPAGO'
+		WHEN linea_negocio LIKE '%PREPAGO%'
+		AND upper(portabilidad)= 'SI' THEN 'ALTA PORTABILIDAD PREPAGO'
+		WHEN linea_negocio LIKE '%PREPAGO%'
+		AND upper(portabilidad)= 'INTRA' THEN 'ALTA PORTABILIDAD PREPAGO'
 		ELSE ''
-	END AS SUB_MOVIMIENTO
+	END AS sub_movimiento
 	, imei
 	, equipo
 	, icc
@@ -91,307 +98,340 @@ WHERE
 	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 ;
+
+
+--N02
 --ELIMINA LA DATA PRE EXISTENTE
 DELETE
 FROM
-	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_HIST
+	${ESQUEMA_TABLA}.otc_t_alta_baja_hist
 WHERE
-	TIPO = 'BAJA'
-	AND FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	tipo = 'BAJA'
+	AND fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
+	
 --INSERTA LA DATA DEL MES
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_HIST
+	${ESQUEMA_TABLA}.otc_t_alta_baja_hist
 SELECT
-	'BAJA' AS TIPO
-	, TELEFONO
-	, FECHA_BAJA AS FECHA
-	, CAST(NULL AS STRING) AS CANAL
-	, CAST(NULL AS STRING) AS SUB_CANAL
-	, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
-	, PORTABILIDAD
-	, 'MOVISTAR (OTECEL)' AS Operadora_origen
-	, Operadora_destino
-	, MOTIVO_BAJA AS motivo
-	, CAST(NULL AS STRING) AS DISTRIBUIDOR
-	, CAST(NULL AS STRING) AS OFICINA
-	--INSERTADO EN RF
-	, 'BAJA CHARGEBACK' AS SUB_MOVIMIENTO
-	, CAST(NULL AS STRING) AS IMEI
-	, CAST(NULL AS STRING) AS EQUIPO
-	, CAST(NULL AS STRING) AS ICC
-	, CAST(NULL AS STRING) AS CIUDAD
-	, CAST(NULL AS STRING) AS PROVINCIA
-	, CAST(NULL AS STRING) AS COD_CATEGORIA
-	, CODIGO_USUARIO AS DOMAIN_LOGIN_OW
-	, CAST(NULL AS STRING) AS NOMBRE_USUARIO_OW
-	, CAST(NULL AS STRING) AS DOMAIN_LOGIN_SUB
-	, CAST(NULL AS STRING) AS NOMBRE_USUARIO_SUB
-	, CAST(NULL AS STRING) AS FORMA_PAGO
-	, CAST(NULL AS STRING) AS COD_DA
-	, CAST(NULL AS STRING) AS NOM_USUARIO
-	, CAST(NULL AS STRING) AS CAMPANIA
-	, CAST(NULL AS STRING) AS CODIGO_DISTRIBUIDOR
-	, CAST(NULL AS STRING) AS CODIGO_PLAZA
-	, CAST(NULL AS STRING) AS NOM_PLAZA
-	, CAST(NULL AS STRING) AS REGION
-	, CAST(NULL AS STRING) AS PROVINCIA_IVR
-	, EJECUTIVO_ASIGNADO_PTR
-	, AREA_PTR
-	, CODIGO_VENDEDOR_DA_PTR
-	, JEFATURA_PTR
-	, CAST(NULL AS STRING) AS PROVINCIA_MS
-	, CAST(NULL AS STRING) AS CODIGO_USUARIO
-	, CAST(NULL AS STRING) AS CALF_RIESGO
-	, CAST(NULL AS STRING) AS CAP_ENDEU
-	, CAST(NULL AS INT) AS VALOR_CRED
+	'BAJA' AS tipo
+	, telefono
+	, fecha_baja AS fecha
+	, CAST(NULL AS STRING) AS canal
+	, CAST(NULL AS STRING) AS sub_canal
+	, CAST(NULL AS STRING) AS nuevo_sub_canal
+	, portabilidad
+	, 'MOVISTAR (OTECEL)' AS operadora_origen
+	, operadora_destino
+	, motivo_baja AS motivo
+	, CAST(NULL AS STRING) AS distribuidor
+	, CAST(NULL AS STRING) AS oficina
+	--INSERTADO COMISIONES  BIGD-677
+	, 'BAJA CHARGEBACK' AS sub_movimiento
+	, CAST(NULL AS STRING) AS imei
+	, CAST(NULL AS STRING) AS equipo
+	, CAST(NULL AS STRING) AS icc
+	, CAST(NULL AS STRING) AS ciudad
+	, CAST(NULL AS STRING) AS provincia
+	, CAST(NULL AS STRING) AS cod_categoria
+	, codigo_usuario AS domain_login_ow
+	, CAST(NULL AS STRING) AS nombre_usuario_ow
+	, CAST(NULL AS STRING) AS domain_login_sub
+	, CAST(NULL AS STRING) AS nombre_usuario_sub
+	, CAST(NULL AS STRING) AS forma_pago
+	, CAST(NULL AS STRING) AS cod_da
+	, CAST(NULL AS STRING) AS nom_usuario
+	, CAST(NULL AS STRING) AS campania
+	, CAST(NULL AS STRING) AS codigo_distribuidor
+	, CAST(NULL AS STRING) AS codigo_plaza
+	, CAST(NULL AS STRING) AS nom_plaza
+	, CAST(NULL AS STRING) AS region
+	, CAST(NULL AS STRING) AS provincia_ivr
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, CAST(NULL AS STRING) AS provincia_ms
+	, CAST(NULL AS STRING) AS codigo_usuario
+	, CAST(NULL AS STRING) AS calf_riesgo
+	, CAST(NULL AS STRING) AS cap_endeu
+	, CAST(NULL AS INT) AS valor_cred
 	, (CASE
-		WHEN MOTIVO_BAJA = 'COBRANZAS' THEN 'INVOLUNTARIO'
+		WHEN motivo_baja = 'COBRANZAS' THEN 'INVOLUNTARIO'
 		ELSE 'VOLUNTARIO'
-	END) AS VOL_INVOL
+	END) AS vol_invol
 	, account_no AS account_num
 	, CAST(NULL AS STRING) AS distribuidor_crm
 	, CAST(NULL AS STRING) AS canal_transacc
-	, CAST(NULL AS DOUBLE) AS TARIFA_FINAL_PLAN_ACT
+	, CAST(NULL AS DOUBLE) AS tarifa_final_plan_act
 	, CAST(NULL AS DOUBLE) AS descuento_tarifa_plan_act
 	, CAST(NULL AS DOUBLE) AS tarifa_plan_actual_ov
 	, CAST(NULL AS STRING) AS descripcion_descuento_plan_act
-	---------------------------------------XXXXXXXXXXXXXXXXXXXXXXXXXXXX-----------------------------
+	---------------------------------------xxxxxxxxxxxxxxxxxxxxxxxxxxxx-----------------------------
 FROM
-	${ESQUEMA_CS_ALTAS}.otc_t_BAJAS_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_bajas_bi
 WHERE
-	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA';
+
+
+
+
+	------N03
 --ELIMINA LA DATA PRE EXISTENTE DEL MES QUE SE PROCESA
 DELETE
 FROM
 	${ESQUEMA_TABLA}.otc_t_transfer_hist
 WHERE
-	TIPO = 'PRE_POS'
-	AND FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	tipo = 'PRE_POS'
+	AND fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
+
+
+	
 --INSERTA LA DATA DEL MES
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST
+	${ESQUEMA_TABLA}.otc_t_transfer_hist
 SELECT
-	'PRE_POS' AS TIPO
-	, TELEFONO
-	, FECHA_TRANSFERENCIA AS FECHA
-	, CANAL_USUARIO AS CANAL
-	, SUB_CANAL
-	, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
-	, NOM_DISTRIBUIDOR_USUARIO AS DISTRIBUIDOR
-	, OFICINA_USUARIO AS OFICINA
-	--INSERTADO EN RF
-	, 'TRANSFER IN POSPAGO' AS SUB_MOVIMIENTO
-	, IMEI
-	, EQUIPO
-	, ICC
-	, DOMAIN_LOGIN_OW
-	, NOMBRE_USUARIO_OW
-	, DOMAIN_LOGIN_SUB
-	, NOMBRE_USUARIO_SUB
-	, FORMA_PAGO
-	, CANAL AS canal_transacc
-	, CAMPANIA
-	, CODIGO_DISTRIBUIDOR_USUARIO AS CODIGO_DISTRIBUIDOR
-	, CODIGO_PLAZA_USUARIO AS CODIGO_PLAZA
-	, NOM_PLAZA_USUARIO AS NOM_PLAZA
-	, REGION_USUARIO AS REGION
-	, CAST( NULL AS STRING) AS RUC_DISTRIBUIDOR -- ELIMINAR 
-	, EJECUTIVO_ASIGNADO_PTR
-	, AREA_PTR
-	, CODIGO_VENDEDOR_DA_PTR
-	, JEFATURA_PTR
-	, CODIGO_USUARIO
-	, CALF_RIESGO
-	, CAP_ENDEU
-	, VALOR_CRED
-	, ACCOUNT_NUM_ANTERIOR
-	, CIUDAD_USUARIO
-	, PROVINCIA_USUARIO
+	'PRE_POS' AS tipo
+	, telefono
+	, fecha_transferencia AS fecha
+	, canal_usuario AS canal
+	, sub_canal
+	, CAST(NULL AS STRING) AS nuevo_sub_canal
+	, nom_distribuidor_usuario AS distribuidor
+	, oficina_usuario AS oficina
+	--INSERTADO COMISIONES  BIGD-677
+	, 'TRANSFER IN POSPAGO' AS sub_movimiento
+	, imei
+	, equipo
+	, icc
+	, domain_login_ow
+	, nombre_usuario_ow
+	, domain_login_sub
+	, nombre_usuario_sub
+	, forma_pago
+	, canal AS canal_transacc
+	, campania
+	, codigo_distribuidor_usuario AS codigo_distribuidor
+	, codigo_plaza_usuario AS codigo_plaza
+	, nom_plaza_usuario AS nom_plaza
+	, region_usuario AS region
+	, CAST( NULL AS STRING) AS ruc_distribuidor -- eliminar 
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, codigo_usuario
+	, calf_riesgo
+	, cap_endeu
+	, valor_cred
+	, account_num_anterior
+	, ciudad_usuario
+	, provincia_usuario
 	, ciudad
-	, codigo_plan_anterior AS COD_PLAN_ANTERIOR
-	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
+	, codigo_plan_anterior AS cod_plan_anterior
+	, nombre_plan_anterior AS des_plan_anterior
 	, distribuidor AS distribuidor_crm
-	, (nvl(tarifa_ov_plan_act, tarifa_basica))-(nvl(descuento_tarifa_plan_act, 0)) AS TARIFA_FINAL_PLAN_ACT --** OJO
+	, (nvl(tarifa_ov_plan_act, tarifa_basica))-(nvl(descuento_tarifa_plan_act, 0)) AS tarifa_final_plan_act --** OJO
 	, descuento_tarifa_plan_act
 	, tarifa_ov_plan_act
-	-------------------------XXXXXXXXXXXXXXXXXXXX---------------------------------
+	-------------------------xxxxxxxxxxxxxxxxxxxx---------------------------------
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_in_bi
 WHERE
-	P_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 ;
+
+
+
+
+----N04
 --ELIMINA LA DATA PRE EXISTENTE
 DELETE
 FROM
-	${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST
+	${ESQUEMA_TABLA}.otc_t_transfer_hist
 WHERE
-	TIPO = 'POS_PRE'
-	AND FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	tipo = 'POS_PRE'
+	AND fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
+
+
 --INSERTA LA DATA DEL MES
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST
+	${ESQUEMA_TABLA}.otc_t_transfer_hist
 SELECT
-	'POS_PRE' AS TIPO
-	, TELEFONO
-	, FECHA_TRANSFERENCIA AS FECHA
-	, CANAL_USUARIO AS CANAL
-	, SUB_CANAL
-	, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
-	, NOM_DISTRIBUIDOR_USUARIO AS DISTRIBUIDOR
-	, OFICINA_USUARIO AS OFICINA
-	-----------------	INSERTADO EN RF
-	, 'TRANSFER OUT PREPAGO' AS SUB_MOVIMIENTO
-	, IMEI
-	, EQUIPO
-	, ICC
-	, DOMAIN_LOGIN_OW
-	, NOMBRE_USUARIO_OW
-	, DOMAIN_LOGIN_SUB
-	, NOMBRE_USUARIO_SUB
-	, FORMA_PAGO
-	, CANAL AS canal_transacc
-	, CAMPANIA_USUARIO AS CAMPANIA
-	, CODIGO_DISTRIBUIDOR_USUARIO AS CODIGO_DISTRIBUIDOR
-	, CODIGO_PLAZA_USUARIO AS CODIGO_PLAZA
-	, NOM_PLAZA_USUARIO AS NOM_PLAZA
-	, REGION_USUARIO AS REGION
-	, CAST( NULL AS STRING) AS RUC_DISTRIBUIDOR -- ELIMINAR 
-	, EJECUTIVO_ASIGNADO_PTR
-	, AREA_PTR
-	, CODIGO_VENDEDOR_DA_PTR
-	, JEFATURA_PTR
-	, CODIGO_USUARIO
-	, CAST(NULL AS STRING) AS CALF_RIESGO
-	, CAST(NULL AS STRING) AS CAP_ENDEU
-	, CAST(NULL AS INT) AS VALOR_CRED
-	, ACCOUNT_NUM_ANTERIOR
-	, CIUDAD_USUARIO
-	, PROVINCIA_USUARIO
+	'POS_PRE' AS tipo
+	, telefono
+	, fecha_transferencia AS fecha
+	, canal_usuario AS canal
+	, sub_canal
+	, CAST(NULL AS STRING) AS nuevo_sub_canal
+	, nom_distribuidor_usuario AS distribuidor
+	, oficina_usuario AS oficina
+	-----------------	INSERTADO COMISIONES  BIGD-677
+	, 'TRANSFER OUT PREPAGO' AS sub_movimiento
+	, imei
+	, equipo
+	, icc
+	, domain_login_ow
+	, nombre_usuario_ow
+	, domain_login_sub
+	, nombre_usuario_sub
+	, forma_pago
+	, canal AS canal_transacc
+	, campania_usuario AS campania
+	, codigo_distribuidor_usuario AS codigo_distribuidor
+	, codigo_plaza_usuario AS codigo_plaza
+	, nom_plaza_usuario AS nom_plaza
+	, region_usuario AS region
+	, CAST( NULL AS STRING) AS ruc_distribuidor -- eliminar 
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, codigo_usuario
+	, CAST(NULL AS STRING) AS calf_riesgo
+	, CAST(NULL AS STRING) AS cap_endeu
+	, CAST(NULL AS INT) AS valor_cred
+	, account_num_anterior
+	, ciudad_usuario
+	, provincia_usuario
 	, ciudad
-	, codigo_plan_anterior AS COD_PLAN_ANTERIOR
-	, nombre_plan_anterior AS DES_PLAN_ANTERIOR
+	, codigo_plan_anterior AS cod_plan_anterior
+	, nombre_plan_anterior AS des_plan_anterior
 	, distribuidor AS distribuidor_crm
-	, CAST(NULL AS DOUBLE) AS TARIFA_FINAL_PLAN_ACT
+	, CAST(NULL AS DOUBLE) AS tarifa_final_plan_act
 	, CAST(NULL AS DOUBLE) AS descuento_tarifa_plan_act
 	, CAST(NULL AS DOUBLE) AS tarifa_ov_plan_act
-	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+	--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi
 WHERE
 	p_fecha_proceso = '${fecha_movimientos_cp}'
 ;
+
+
+
+----N05
 --ELIMINA LA DATA PRE EXISTENTE	
 DELETE
 FROM
-	${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST
+	${ESQUEMA_TABLA}.otc_t_cambio_plan_hist
 WHERE
-	FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
 --INSERTA LA DATA DEL MES
 INSERT
 	INTO
 	${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST
 SELECT
-	TIPO_MOVIMIENTO AS TIPO
-	, TELEFONO
-	, FECHA_CAMBIO_PLAN AS FECHA
-	, CANAL
-	, SUB_CANAL
-	, CAST(NULL AS varchar(50)) AS NUEVO_SUB_CANAL
-	, NOM_DISTRIBUIDOR AS DISTRIBUIDOR
-	, OFICINA
-	, CODIGO_PLAN_ANTERIOR AS COD_PLAN_ANTERIOR
-	, DESCRIPCION_PLAN_ANTERIOR AS DES_PLAN_ANTERIOR
-	, TARIFA_OV_PLAN_ANT AS TB_DESCUENTO
-	, DESCUENTO_TARIFA_PLAN_ANT AS TB_OVERRIDE
-	, DELTA
-	--INSERTADO EN RF 
+	tipo_movimiento AS tipo
+	, telefono
+	, fecha_cambio_plan AS fecha
+	, canal
+	, sub_canal
+	, CAST(NULL AS varchar(50)) AS nuevo_sub_canal
+	, nom_distribuidor AS distribuidor
+	, oficina
+	, codigo_plan_anterior AS cod_plan_anterior
+	, descripcion_plan_anterior AS des_plan_anterior
+	, tarifa_ov_plan_ant AS tb_descuento
+	, descuento_tarifa_plan_ant AS tb_override
+	, delta
+	--INSERTADO COMISIONES  BIGD-677 
 	, (CASE
-		WHEN (DELTA >= -0.99
-			AND DELTA < 0) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
-		WHEN (DELTA > 0
-			AND DELTA <= 0.99) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
-		WHEN DELTA = 0 THEN 'CAMBIO DE PLAN MISMA TARIFA'
-		WHEN DELTA >= 1.0 THEN 'CAMBIO DE PLAN UPSELL'
-		WHEN DELTA <= 1.0 THEN 'CAMBIO DE PLAN DOWNSELL CHARGEBACK'
+		WHEN (delta >= -0.99 AND delta < 0) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
+		WHEN (delta > 0	AND delta <= 0.99) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
+		WHEN delta = 0 THEN 'CAMBIO DE PLAN MISMA TARIFA'
+		WHEN delta >= 1.0 THEN 'CAMBIO DE PLAN UPSELL'
+		WHEN delta <= 1.0 THEN 'CAMBIO DE PLAN DOWNSELL CHARGEBACK'
 		ELSE ''
-	END)
-    AS SUB_MOVIMIENTO
-	, CODIGO_USUARIO_ORDEN AS DOMAIN_LOGIN_OW
-	, NOMBRE_USUARIO_ORDEN AS NOMBRE_USUARIO_OW
-	, CODIGO_USUARIO_SUBMIT AS DOMAIN_LOGIN_SUB
-	, NOMBRE_USUARIO_SUBMIT AS NOMBRE_USUARIO_SUB
-	, FORMA_PAGO
-	, CAMPANIA
-	, CAST(NULL AS varchar(60)) AS CODIGO_DISTRIBUIDOR
-	, CAST(NULL AS varchar(60)) AS CODIGO_PLAZA
-	, CAST(NULL AS varchar(110)) AS NOM_PLAZA
-	, CAST(NULL AS STRING) AS REGION
-	, CAST(NULL AS STRING) AS RUC_DISTRIBUIDOR -- ELIMINAR 
-	, TARIFA_BASICA_ANTERIOR
-	, FECHA_INICIO_PLAN_ANTERIOR
-	, TARIFA_FINAL_PLAN_ACT
-	, TARIFA_FINAL_PLAN_ANT
-	, PROVINCIA
+	END) AS sub_movimiento
+	, codigo_usuario_orden AS domain_login_ow
+	, nombre_usuario_orden AS nombre_usuario_ow
+	, codigo_usuario_submit AS domain_login_sub
+	, nombre_usuario_submit AS nombre_usuario_sub
+	, forma_pago
+	, campania
+	, CAST(NULL AS varchar(60)) AS codigo_distribuidor
+	, CAST(NULL AS varchar(60)) AS codigo_plaza
+	, CAST(NULL AS varchar(110)) AS nom_plaza
+	, CAST(NULL AS STRING) AS region
+	, CAST(NULL AS STRING) AS ruc_distribuidor -- ELIMINAR 
+	, tarifa_basica_anterior
+	, fecha_inicio_plan_anterior
+	, tarifa_final_plan_act
+	, tarifa_final_plan_ant
+	, provincia
 	, descripcion_descuento_plan_act
 	, descuento_tarifa_plan_act
 	, tarifa_plan_actual_ov
-	-------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-------------------------------------
+	-------------xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-------------------------------------
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_cambio_plan_bi
 WHERE
 	p_fecha_proceso = ${fecha_movimientos_cp};
------------------------------INSERTADO EN RF-PARA INCLUIR TABLA NO RECLICLABLES--------------------------
+
+
+	----N06
+-----------------------------INSERTADO COMISIONES  BIGD-677-PARA INCLUIR TABLA NO RECLICLABLES--------------------------
 --ELIMINA LA DATA PRE EXISTENTE
 DELETE
 FROM
-	${ESQUEMA_TABLA}.OTC_T_NO_RECICLABLE_HIST
+	${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp
 WHERE
-	TIPO = 'NO_RECICLABLE'
-	AND FECHA_PROCESO = '${fecha_movimientos}';
+	tipo = 'NO_RECICLABLE'
+	AND fecha_proceso = '${fecha_movimientos}';
+
+
 --INSERTA LA DATA DEL MES
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.otc_t_no_reciclable_hist
+	${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp
 SELECT
-	'NO_RECICLABLE' AS TIPO
-	, 'NO RECICLABLE' AS SUB_MOVIMIENTO
-	, NUM_TELEFONICO AS TELEFONO
-	, FECHA_ALTA AS FECHA
-	, DOCUMENTO_CLIENTE_ACT
-	, FECHA_PROCESO
-	, CAST(NULL AS STRING) AS CANAL_COMERCIAL
-	, CAST(NULL AS STRING) AS CAMPANIA
-	, CAST(NULL AS STRING) AS CODIGO_DISTRIBUIDOR
-	, CAST(NULL AS varchar(110)) AS NOM_DISTRIBUIDOR
-	, CAST(NULL AS varchar(60)) AS CODIGO_PLAZA
-	, CAST(NULL AS varchar(110)) AS NOM_PLAZA
-	, CAST(NULL AS STRING) AS REGION
-	, CAST( NULL AS STRING) AS RUC_DISTRIBUIDOR -- ELIMINAR 
-	, LINEA_NEGOCIO_BAJA
-	, DOCUMENTO_CLIENTE_ANT
-	, DIAS
-	, FECHA_BAJA
+	'NO_RECICLABLE' AS tipo
+	, 'NO RECICLABLE' AS sub_movimiento
+	, num_telefonico AS telefono
+	, fecha_alta AS fecha
+	, documento_cliente_act
+	, fecha_proceso
+	, CAST(NULL AS STRING) AS canal_comercial
+	, CAST(NULL AS STRING) AS campania
+	, CAST(NULL AS STRING) AS codigo_distribuidor
+	, CAST(NULL AS varchar(110)) AS nom_distribuidor
+	, CAST(NULL AS varchar(60)) AS codigo_plaza
+	, CAST(NULL AS varchar(110)) AS nom_plaza
+	, CAST(NULL AS STRING) AS region
+	, CAST( NULL AS STRING) AS ruc_distribuidor -- ELIMINAR 
+	, linea_negocio_baja
+	, documento_cliente_ant
+	, dias
+	, fecha_baja
 	------------MODIFICADO FORMATO FECHA YYYY-MM-DD
 FROM
 	${ESQUEMA_CS_ALTAS}.no_reciclable
 WHERE
-	FECHA_PROCESO = '${fecha_movimientos}'
+	fecha_proceso = '${fecha_movimientos}'
 	AND marca = 'TELEFONICA';
+
+
+
+	----N07
 -----------------------********************************-------------------------------
 ------------------------PROCESO ALTAS BAJAS REPROCESO---------------------------------
 -----------------------********************************-------------------------------
 ---TABLA QUE ALMACENA LAS ALTAS DE TODOS LOS DIAS (particiones)
---PARA UN DETERMINADO MES DE ANALISIS: tmp_altas_ttls_mes 
-DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_altas_ttls_mes;
+--de un DETERMINADO MES DE ANALISIS: tmp_mp_altas_ttls_mes 
+DROP TABLE IF EXISTS ${ESQUEMA_TEMP}.tmp_mp_altas_ttls_mes;
 
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_altas_ttls_mes AS 
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_mp_altas_ttls_mes AS 
 SELECT
 	DISTINCT
-telefono
+	telefono
 	, linea_negocio
 	, account_num
 	, fecha_alta
@@ -437,20 +477,24 @@ FROM
 WHERE
 	p_fecha_proceso BETWEEN '${f_inicio_abr}' AND '${f_fin_abr}'
 	AND marca = 'TELEFONICA';
---- TABLA QUE ALMACENA LOS TELEFONOS DE LOS MOVIMIENTOS:
----ALTAS, TRANSFER IN, TRANSFER OUT, CAMBIOS DE PLAN, A MES CAIDO,(O FECHA EJE +1)
----SE TENDRA UNA INFORMACION REAL A MES CAIDO ej: yyyymm01
----DENOMINADOS MOVIMIENTOS EFECTIVOS: tmp_movimientos_efctvs
-DROP TABLE ${ESQUEMA_TEMP}.tmp_movimientos_efctvs;
 
-CREATE TABLE ${ESQUEMA_TEMP}.tmp_movimientos_efctvs AS 
+
+
+
+	--N08
+--- TABLA QUE ALMACENA LOS TELEFONOS DE:ALTAS, TRANSFER IN, TRANSFER OUT, CAMBIOS DE PLAN, A MES CAIDO,(O FECHA EJE +1)
+---SE TENDRA UNA INFORMACION REAL A MES CAIDO ej: yyyymm01
+---DENOMINADOS MOVIMIENTOS EFECTIVOS: tmp_mp_movs_efctvs
+DROP TABLE ${ESQUEMA_TEMP}.tmp_mp_movs_efctvs;
+
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_mp_movs_efctvs AS 
 SELECT
 	DISTINCT
 telefono
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_altas_bi
 WHERE
-	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
@@ -459,16 +503,16 @@ telefono
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_transfer_in_bi
 WHERE
-	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
 	DISTINCT
 telefono
 FROM
-	${ESQUEMA_CS_ALTAS}.otc_t_transfer_OUT_bi
+	${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi
 WHERE
-	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA'
 UNION ALL
 SELECT
@@ -477,20 +521,23 @@ telefono
 FROM
 	${ESQUEMA_CS_ALTAS}.otc_t_cambio_plan_bi
 WHERE
-	p_FECHA_PROCESO = '${fecha_movimientos_cp}'
+	p_fecha_proceso = '${fecha_movimientos_cp}'
 	AND marca = 'TELEFONICA';
+
+----N09
 --TABLA DE ALTAS BAJAS REPROCESO 
 DELETE
 FROM
-	${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST
+	${ESQUEMA_TABLA}.otc_t_mp_alta_baja_rep
 WHERE
 	tipo = 'ALTA_BAJA'
 	--AND FECHA_proceso BETWEEN '${f_inicio}' AND '${fecha_proceso}';
-	AND FECHA_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+	AND fecha_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}';
+
 
 INSERT
 	INTO
-	${ESQUEMA_TABLA}.otc_t_alta_baja_reproceso_hist 
+	${ESQUEMA_TABLA}.otc_t_mp_alta_baja_rep 
 SELECT
 	telefono
 	, cliente
@@ -503,7 +550,7 @@ SELECT
 		ELSE linea_negocio
 	END) AS linea_negocio
 	, 'ALTA_BAJA' AS tipo
-	, 'ALTAS BAJAS REPROCESO' AS SUB_MOVIMIENTO
+	, 'ALTAS BAJAS REPROCESO' AS sub_movimiento
 	, account_num
 	, documento_cliente
 	, nombre_plan
@@ -547,12 +594,12 @@ FROM
 	ORDER BY
 		atm.fecha_baja DESC) AS rnum
 	FROM
-		${ESQUEMA_TEMP}.tmp_altas_ttls_mes atm
+		${ESQUEMA_TEMP}.tmp_mp_altas_ttls_mes atm
 	LEFT JOIN (
 		SELECT
 			telefono
 		FROM
-			${ESQUEMA_TEMP}.tmp_movimientos_efctvs) me
+			${ESQUEMA_TEMP}.tmp_mp_movs_efctvs) me
         ON
 		atm.telefono = me.telefono
 	WHERE
@@ -560,639 +607,661 @@ FROM
 ) tt
 WHERE
 	rnum = 1;
+
+
+
+	---N10
 --OBTIENE EL ULTIMO EVENTO DEL ALTA EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.otc_t_alta_hist_unic;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_ALTA_HIST_UNIC AS
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_alta_hist_unic AS
 SELECT
-	XX.TIPO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.CANAL
-	, XX.SUB_CANAL
-	, XX.NUEVO_SUB_CANAL
-	, XX.PORTABILIDAD
-	, XX.Operadora_origen
-	, XX.Operadora_destino
-	, XX.motivo
-	, XX.DISTRIBUIDOR
-	, XX.OFICINA
-	--INSERTADO EN RF
-	, XX.SUB_MOVIMIENTO
-	, XX.IMEI
-	, XX.EQUIPO
-	, XX.ICC
-	, XX.CIUDAD
-	, XX.PROVINCIA
-	, XX.COD_CATEGORIA
-	, XX.DOMAIN_LOGIN_OW
-	, XX.NOMBRE_USUARIO_OW
-	, XX.DOMAIN_LOGIN_SUB
-	, XX.NOMBRE_USUARIO_SUB
-	, XX.FORMA_PAGO
-	, XX.COD_DA
-	, XX.NOM_USUARIO
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.PROVINCIA_IVR
-	, XX.EJECUTIVO_ASIGNADO_PTR
-	, XX.AREA_PTR
-	, XX.CODIGO_VENDEDOR_DA_PTR
-	, XX.JEFATURA_PTR
-	, XX.PROVINCIA_MS
-	, XX.CODIGO_USUARIO
-	, XX.CALF_RIESGO
-	, XX.CAP_ENDEU
-	, XX.VALOR_CRED
-	, XX.VOL_INVOL
-	, XX.ACCOUNT_NUM
-	, XX.distribuidor_crm
-	, XX.canal_transacc
-	, XX.TARIFA_FINAL_PLAN_ACT
-	, XX.descuento_tarifa_plan_act
-	, XX.tarifa_plan_actual_ov
-	, XX.descripcion_descuento_plan_act
+	xx.tipo
+	, xx.telefono
+	, xx.fecha
+	, xx.canal
+	, xx.sub_canal
+	, xx.nuevo_sub_canal
+	, xx.portabilidad
+	, xx.operadora_origen
+	, xx.operadora_destino
+	, xx.motivo
+	, xx.distribuidor
+	, xx.oficina
+	--insertado COMISIONES  BIGD-677
+	, xx.sub_movimiento
+	, xx.imei
+	, xx.equipo
+	, xx.icc
+	, xx.ciudad
+	, xx.provincia
+	, xx.cod_categoria
+	, xx.domain_login_ow
+	, xx.nombre_usuario_ow
+	, xx.domain_login_sub
+	, xx.nombre_usuario_sub
+	, xx.forma_pago
+	, xx.cod_da
+	, xx.nom_usuario
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.provincia_ivr
+	, xx.ejecutivo_asignado_ptr
+	, xx.area_ptr
+	, xx.codigo_vendedor_da_ptr
+	, xx.jefatura_ptr
+	, xx.provincia_ms
+	, xx.codigo_usuario
+	, xx.calf_riesgo
+	, xx.cap_endeu
+	, xx.valor_cred
+	, xx.vol_invol
+	, xx.account_num
+	, xx.distribuidor_crm
+	, xx.canal_transacc
+	, xx.tarifa_final_plan_act
+	, xx.descuento_tarifa_plan_act
+	, xx.tarifa_plan_actual_ov
+	, xx.descripcion_descuento_plan_act
+	----------***********--------------
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.CANAL
-		, AA.SUB_CANAL
-		, AA.NUEVO_SUB_CANAL
-		, AA.PORTABILIDAD
-		, AA.Operadora_origen
-		, AA.Operadora_destino
-		, AA.motivo
-		, AA.DISTRIBUIDOR
-		, AA.OFICINA
-		--INSERTADO EN RF
-		, AA.SUB_MOVIMIENTO
-		, AA.IMEI
-		, AA.EQUIPO
-		, AA.ICC
-		, AA.CIUDAD
-		, AA.PROVINCIA
-		, AA.COD_CATEGORIA
-		, AA.DOMAIN_LOGIN_OW
-		, AA.NOMBRE_USUARIO_OW
-		, AA.DOMAIN_LOGIN_SUB
-		, AA.NOMBRE_USUARIO_SUB
-		, AA.FORMA_PAGO
-		, AA.COD_DA
-		, AA.NOM_USUARIO
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.PROVINCIA_IVR
-		, AA.EJECUTIVO_ASIGNADO_PTR
-		, AA.AREA_PTR
-		, AA.CODIGO_VENDEDOR_DA_PTR
-		, AA.JEFATURA_PTR
-		, AA.PROVINCIA_MS
-		, AA.CODIGO_USUARIO
-		, AA.CALF_RIESGO
-		, AA.CAP_ENDEU
-		, AA.VALOR_CRED
-		, AA.VOL_INVOL
-		, AA.ACCOUNT_NUM
-		, AA.distribuidor_crm
-		, AA.canal_transacc
-		, AA.TARIFA_FINAL_PLAN_ACT
-		, AA.descuento_tarifa_plan_act
-		, AA.tarifa_plan_actual_ov
-		, AA.descripcion_descuento_plan_act
+		aa.tipo
+		, aa.telefono
+		, aa.fecha
+		, aa.canal
+		, aa.sub_canal
+		, aa.nuevo_sub_canal
+		, aa.portabilidad
+		, aa.operadora_origen
+		, aa.operadora_destino
+		, aa.motivo
+		, aa.distribuidor
+		, aa.oficina
+		--insertado COMISIONES  BIGD-677
+		, aa.sub_movimiento
+		, aa.imei
+		, aa.equipo
+		, aa.icc
+		, aa.ciudad
+		, aa.provincia
+		, aa.cod_categoria
+		, aa.domain_login_ow
+		, aa.nombre_usuario_ow
+		, aa.domain_login_sub
+		, aa.nombre_usuario_sub
+		, aa.forma_pago
+		, aa.cod_da
+		, aa.nom_usuario
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.provincia_ivr
+		, aa.ejecutivo_asignado_ptr
+		, aa.area_ptr
+		, aa.codigo_vendedor_da_ptr
+		, aa.jefatura_ptr
+		, aa.provincia_ms
+		, aa.codigo_usuario
+		, aa.calf_riesgo
+		, aa.cap_endeu
+		, aa.valor_cred
+		, aa.vol_invol
+		, aa.account_num
+		, aa.distribuidor_crm
+		, aa.canal_transacc
+		, aa.tarifa_final_plan_act
+		, aa.descuento_tarifa_plan_act
+		, aa.tarifa_plan_actual_ov
+		, aa.descripcion_descuento_plan_act
+		-------***----------------
 		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TIPO
-		, aa.TELEFONO
+                PARTITION BY aa.tipo
+		, aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_HIST AS AA
+		${ESQUEMA_TABLA}.otc_t_alta_baja_hist AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
-		AND TIPO = 'ALTA'
-    ) XX
+		fecha < '${fecha_movimientos}'
+		AND tipo = 'ALTA'
+    ) xx
 WHERE
-	XX.rnum = 1;
+	xx.rnum = 1;
+
+---N11
 --OBTIENE EL ÛŒTIMO EVENTO DE LAS BAJAS EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.otc_t_baja_hist_unic;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_BAJA_HIST_UNIC AS
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_baja_hist_unic AS
 SELECT
-	XX.TIPO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.CANAL
-	, XX.SUB_CANAL
-	, XX.NUEVO_SUB_CANAL
-	, XX.PORTABILIDAD
-	, XX.Operadora_origen
-	, XX.Operadora_destino
-	, XX.motivo
-	, XX.DISTRIBUIDOR
-	, XX.OFICINA
-	--INSERTADO EN RF
-	, XX.SUB_MOVIMIENTO
-	, XX.IMEI
-	, XX.EQUIPO
-	, XX.ICC
-	, XX.CIUDAD
-	, XX.PROVINCIA
-	, XX.COD_CATEGORIA
-	, XX.DOMAIN_LOGIN_OW
-	, XX.NOMBRE_USUARIO_OW
-	, XX.DOMAIN_LOGIN_SUB
-	, XX.NOMBRE_USUARIO_SUB
-	, XX.FORMA_PAGO
-	, XX.COD_DA
-	, XX.NOM_USUARIO
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.PROVINCIA_IVR
-	, XX.EJECUTIVO_ASIGNADO_PTR
-	, XX.AREA_PTR
-	, XX.CODIGO_VENDEDOR_DA_PTR
-	, XX.JEFATURA_PTR
-	, XX.PROVINCIA_MS
-	, XX.CODIGO_USUARIO
-	, XX.CALF_RIESGO
-	, XX.CAP_ENDEU
-	, XX.VALOR_CRED
-	, XX.VOL_INVOL
-	, XX.ACCOUNT_NUM
-	, XX.distribuidor_crm
-	, XX.canal_transacc
-	, XX.TARIFA_FINAL_PLAN_ACT
-	, XX.descuento_tarifa_plan_act
-	, XX.tarifa_plan_actual_ov
-	, XX.descripcion_descuento_plan_act
+	xx.tipo
+	, xx.telefono
+	, xx.fecha
+	, xx.canal
+	, xx.sub_canal
+	, xx.nuevo_sub_canal
+	, xx.portabilidad
+	, xx.operadora_origen
+	, xx.operadora_destino
+	, xx.motivo
+	, xx.distribuidor
+	, xx.oficina
+	--insertado COMISIONES  BIGD-677
+	, xx.sub_movimiento
+	, xx.imei
+	, xx.equipo
+	, xx.icc
+	, xx.ciudad
+	, xx.provincia
+	, xx.cod_categoria
+	, xx.domain_login_ow
+	, xx.nombre_usuario_ow
+	, xx.domain_login_sub
+	, xx.nombre_usuario_sub
+	, xx.forma_pago
+	, xx.cod_da
+	, xx.nom_usuario
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.provincia_ivr
+	, xx.ejecutivo_asignado_ptr
+	, xx.area_ptr
+	, xx.codigo_vendedor_da_ptr
+	, xx.jefatura_ptr
+	, xx.provincia_ms
+	, xx.codigo_usuario
+	, xx.calf_riesgo
+	, xx.cap_endeu
+	, xx.valor_cred
+	, xx.vol_invol
+	, xx.account_num
+	, xx.distribuidor_crm
+	, xx.canal_transacc
+	, xx.tarifa_final_plan_act
+	, xx.descuento_tarifa_plan_act
+	, xx.tarifa_plan_actual_ov
+	, xx.descripcion_descuento_plan_act
+	------***---------------------
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.CANAL
-		, AA.SUB_CANAL
-		, AA.NUEVO_SUB_CANAL
-		, AA.PORTABILIDAD
-		, AA.Operadora_origen
-		, AA.Operadora_destino
-		, AA.motivo
-		, AA.DISTRIBUIDOR
-		, AA.OFICINA
-		--INSERTADO EN RF
-		, AA.SUB_MOVIMIENTO
-		, AA.IMEI
-		, AA.EQUIPO
-		, AA.ICC
-		, AA.CIUDAD
-		, AA.PROVINCIA
-		, AA.COD_CATEGORIA
-		, AA.DOMAIN_LOGIN_OW
-		, AA.NOMBRE_USUARIO_OW
-		, AA.DOMAIN_LOGIN_SUB
-		, AA.NOMBRE_USUARIO_SUB
-		, AA.FORMA_PAGO
-		, AA.COD_DA
-		, AA.NOM_USUARIO
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.PROVINCIA_IVR
-		, AA.EJECUTIVO_ASIGNADO_PTR
-		, AA.AREA_PTR
-		, AA.CODIGO_VENDEDOR_DA_PTR
-		, AA.JEFATURA_PTR
-		, AA.PROVINCIA_MS
-		, AA.CODIGO_USUARIO
-		, AA.CALF_RIESGO
-		, AA.CAP_ENDEU
-		, AA.VALOR_CRED
-		, AA.VOL_INVOL
-		, AA.ACCOUNT_NUM
-		, AA.distribuidor_crm
-		, AA.canal_transacc
-		, AA.TARIFA_FINAL_PLAN_ACT
-		, AA.descuento_tarifa_plan_act
-		, AA.tarifa_plan_actual_ov
-		, AA.descripcion_descuento_plan_act
+		aa.tipo
+		, aa.telefono
+		, aa.fecha
+		, aa.canal
+		, aa.sub_canal
+		, aa.nuevo_sub_canal
+		, aa.portabilidad
+		, aa.operadora_origen
+		, aa.operadora_destino
+		, aa.motivo
+		, aa.distribuidor
+		, aa.oficina
+		--insertado COMISIONES  BIGD-677
+		, aa.sub_movimiento
+		, aa.imei
+		, aa.equipo
+		, aa.icc
+		, aa.ciudad
+		, aa.provincia
+		, aa.cod_categoria
+		, aa.domain_login_ow
+		, aa.nombre_usuario_ow
+		, aa.domain_login_sub
+		, aa.nombre_usuario_sub
+		, aa.forma_pago
+		, aa.cod_da
+		, aa.nom_usuario
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.provincia_ivr
+		, aa.ejecutivo_asignado_ptr
+		, aa.area_ptr
+		, aa.codigo_vendedor_da_ptr
+		, aa.jefatura_ptr
+		, aa.provincia_ms
+		, aa.codigo_usuario
+		, aa.calf_riesgo
+		, aa.cap_endeu
+		, aa.valor_cred
+		, aa.vol_invol
+		, aa.account_num
+		, aa.distribuidor_crm
+		, aa.canal_transacc
+		, aa.tarifa_final_plan_act
+		, aa.descuento_tarifa_plan_act
+		, aa.tarifa_plan_actual_ov
+		, aa.descripcion_descuento_plan_act
 		---------------------------------------
 		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TIPO
+                PARTITION BY aa.tipo
 		,  
-                aa.TELEFONO
+                aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_HIST AS AA
+		${ESQUEMA_TABLA}.otc_t_alta_baja_hist AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
-		AND TIPO = 'BAJA'
-    ) XX
+		fecha < '${fecha_movimientos}'
+		AND tipo = 'BAJA'
+    ) xx
 WHERE
-	XX.rnum = 1;
+	xx.rnum = 1;
+
+--N12
 --OBTIENE EL ÛŒTIMO EVENTO DE LAS TRANSFERENCIAS OUT EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_POS_PRE_HIST_UNIC AS
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic AS
 SELECT
-	XX.TIPO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.CANAL
-	, XX.SUB_CANAL
-	, XX.NUEVO_SUB_CANAL
-	, XX.DISTRIBUIDOR
-	, XX.OFICINA
-	--    		iNSERTADO EN RF
-	, XX.SUB_MOVIMIENTO
-	, XX.IMEI
-	, XX.EQUIPO
-	, XX.ICC
-	, XX.DOMAIN_LOGIN_OW
-	, XX.NOMBRE_USUARIO_OW
-	, XX.DOMAIN_LOGIN_SUB
-	, XX.NOMBRE_USUARIO_SUB
-	, XX.FORMA_PAGO
-	, XX.canal_transacc
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.RUC_DISTRIBUIDOR -- ELIMINAR 
-	, XX.EJECUTIVO_ASIGNADO_PTR
-	, XX.AREA_PTR
-	, XX.CODIGO_VENDEDOR_DA_PTR
-	, XX.JEFATURA_PTR
-	, XX.CODIGO_USUARIO
-	, XX.CALF_RIESGO
-	, XX.CAP_ENDEU
-	, XX.VALOR_CRED
-	, XX.ACCOUNT_NUM_ANTERIOR
-	, XX.CIUDAD_USUARIO
-	, XX.PROVINCIA_USUARIO
-	, XX.ciudad
-	, XX.COD_PLAN_ANTERIOR
-	, XX.DES_PLAN_ANTERIOR
-	, XX.distribuidor_crm
-	, XX.TARIFA_FINAL_PLAN_ACT
-	, XX.descuento_tarifa_plan_act
-	, XX.tarifa_ov_plan_act
-	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+	xx.tipo
+	, xx.telefono
+	, xx.fecha
+	, xx.canal
+	, xx.sub_canal
+	, xx.nuevo_sub_canal
+	, xx.distribuidor
+	, xx.oficina
+	--    		insertado COMISIONES  BIGD-677
+	, xx.sub_movimiento
+	, xx.imei
+	, xx.equipo
+	, xx.icc
+	, xx.domain_login_ow
+	, xx.nombre_usuario_ow
+	, xx.domain_login_sub
+	, xx.nombre_usuario_sub
+	, xx.forma_pago
+	, xx.canal_transacc
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.ruc_distribuidor -- eliminar 
+	, xx.ejecutivo_asignado_ptr
+	, xx.area_ptr
+	, xx.codigo_vendedor_da_ptr
+	, xx.jefatura_ptr
+	, xx.codigo_usuario
+	, xx.calf_riesgo
+	, xx.cap_endeu
+	, xx.valor_cred
+	, xx.account_num_anterior
+	, xx.ciudad_usuario
+	, xx.provincia_usuario
+	, xx.ciudad
+	, xx.cod_plan_anterior
+	, xx.des_plan_anterior
+	, xx.distribuidor_crm
+	, xx.tarifa_final_plan_act
+	, xx.descuento_tarifa_plan_act
+	, xx.tarifa_ov_plan_act
+	--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.CANAL
-		, AA.SUB_CANAL
-		, AA.NUEVO_SUB_CANAL
-		, AA.DISTRIBUIDOR
-		, AA.OFICINA
-		--    		iNSERTADO EN RF
-		, AA.SUB_MOVIMIENTO
-		, AA.IMEI
-		, AA.EQUIPO
-		, AA.ICC
-		, AA.DOMAIN_LOGIN_OW
-		, AA.NOMBRE_USUARIO_OW
-		, AA.DOMAIN_LOGIN_SUB
-		, AA.NOMBRE_USUARIO_SUB
-		, AA.FORMA_PAGO
-		, AA.canal_transacc
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.RUC_DISTRIBUIDOR -- ELIMINAR 
-		, AA.EJECUTIVO_ASIGNADO_PTR
-		, AA.AREA_PTR
-		, AA.CODIGO_VENDEDOR_DA_PTR
-		, AA.JEFATURA_PTR
-		, AA.CODIGO_USUARIO
-		, AA.CALF_RIESGO
-		, AA.CAP_ENDEU
-		, AA.VALOR_CRED
-		, AA.ACCOUNT_NUM_ANTERIOR
-		, AA.CIUDAD_USUARIO
-		, AA.PROVINCIA_USUARIO
-		, AA.ciudad
-		, AA.COD_PLAN_ANTERIOR
-		, AA.DES_PLAN_ANTERIOR
-		, AA.distribuidor_crm
-		, AA.TARIFA_FINAL_PLAN_ACT
-		, AA.descuento_tarifa_plan_act
-		, AA.tarifa_ov_plan_act
+		aa.tipo
+		, aa.telefono
+		, aa.fecha
+		, aa.canal
+		, aa.sub_canal
+		, aa.nuevo_sub_canal
+		, aa.distribuidor
+		, aa.oficina
+		--    		insertado COMISIONES  BIGD-677
+		, aa.sub_movimiento
+		, aa.imei
+		, aa.equipo
+		, aa.icc
+		, aa.domain_login_ow
+		, aa.nombre_usuario_ow
+		, aa.domain_login_sub
+		, aa.nombre_usuario_sub
+		, aa.forma_pago
+		, aa.canal_transacc
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.ruc_distribuidor -- eliminar 
+		, aa.ejecutivo_asignado_ptr
+		, aa.area_ptr
+		, aa.codigo_vendedor_da_ptr
+		, aa.jefatura_ptr
+		, aa.codigo_usuario
+		, aa.calf_riesgo
+		, aa.cap_endeu
+		, aa.valor_cred
+		, aa.account_num_anterior
+		, aa.ciudad_usuario
+		, aa.provincia_usuario
+		, aa.ciudad
+		, aa.cod_plan_anterior
+		, aa.des_plan_anterior
+		, aa.distribuidor_crm
+		, aa.tarifa_final_plan_act
+		, aa.descuento_tarifa_plan_act
+		, aa.tarifa_ov_plan_act
 		--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TIPO
-		, aa.TELEFONO
+                PARTITION BY aa.tipo
+		, aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST AS AA
+		${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
-		AND TIPO = 'POS_PRE'
-    ) XX
+		fecha < '${fecha_movimientos}'
+		AND tipo = 'POS_PRE'
+    ) xx
 WHERE
-	XX.rnum = 1;
+	xx.rnum = 1;
+
+--N 13
 --OBTIENE EL ÛŒTIMO EVENTO DE LAS TRANSFERENCIAS IN  EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_PRE_POS_HIST_UNIC AS
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic AS
 SELECT
-	XX.TIPO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.CANAL
-	, XX.SUB_CANAL
-	, XX.NUEVO_SUB_CANAL
-	, XX.DISTRIBUIDOR
-	, XX.OFICINA
-	--    		iNSERTADO EN RF
-	, XX.SUB_MOVIMIENTO
-	, XX.IMEI
-	, XX.EQUIPO
-	, XX.ICC
-	, XX.DOMAIN_LOGIN_OW
-	, XX.NOMBRE_USUARIO_OW
-	, XX.DOMAIN_LOGIN_SUB
-	, XX.NOMBRE_USUARIO_SUB
-	, XX.FORMA_PAGO
-	, XX.canal_transacc
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.RUC_DISTRIBUIDOR -- ELIMINAR 
-	, XX.EJECUTIVO_ASIGNADO_PTR
-	, XX.AREA_PTR
-	, XX.CODIGO_VENDEDOR_DA_PTR
-	, XX.JEFATURA_PTR
-	, XX.CODIGO_USUARIO
-	, XX.CALF_RIESGO
-	, XX.CAP_ENDEU
-	, XX.VALOR_CRED
-	, XX.ACCOUNT_NUM_ANTERIOR
-	, XX.CIUDAD_USUARIO
-	, XX.PROVINCIA_USUARIO
-	, XX.ciudad
-	, XX.COD_PLAN_ANTERIOR
-	, XX.DES_PLAN_ANTERIOR
-	, XX.distribuidor_crm
-	, XX.TARIFA_FINAL_PLAN_ACT
-	, XX.descuento_tarifa_plan_act
-	, XX.tarifa_ov_plan_act
-	--XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+	xx.tipo
+	, xx.telefono
+	, xx.fecha
+	, xx.canal
+	, xx.sub_canal
+	, xx.nuevo_sub_canal
+	, xx.distribuidor
+	, xx.oficina
+	--    		insertado COMISIONES  BIGD-677
+	, xx.sub_movimiento
+	, xx.imei
+	, xx.equipo
+	, xx.icc
+	, xx.domain_login_ow
+	, xx.nombre_usuario_ow
+	, xx.domain_login_sub
+	, xx.nombre_usuario_sub
+	, xx.forma_pago
+	, xx.canal_transacc
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.ruc_distribuidor -- eliminar 
+	, xx.ejecutivo_asignado_ptr
+	, xx.area_ptr
+	, xx.codigo_vendedor_da_ptr
+	, xx.jefatura_ptr
+	, xx.codigo_usuario
+	, xx.calf_riesgo
+	, xx.cap_endeu
+	, xx.valor_cred
+	, xx.account_num_anterior
+	, xx.ciudad_usuario
+	, xx.provincia_usuario
+	, xx.ciudad
+	, xx.cod_plan_anterior
+	, xx.des_plan_anterior
+	, xx.distribuidor_crm
+	, xx.tarifa_final_plan_act
+	, xx.descuento_tarifa_plan_act
+	, xx.tarifa_ov_plan_act
+	--xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxX
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.CANAL
-		, AA.SUB_CANAL
-		, AA.NUEVO_SUB_CANAL
-		, AA.DISTRIBUIDOR
-		, AA.OFICINA
-		--    		iNSERTADO EN RF
-		, AA.SUB_MOVIMIENTO
-		, AA.IMEI
-		, AA.EQUIPO
-		, AA.ICC
-		, AA.DOMAIN_LOGIN_OW
-		, AA.NOMBRE_USUARIO_OW
-		, AA.DOMAIN_LOGIN_SUB
-		, AA.NOMBRE_USUARIO_SUB
-		, AA.FORMA_PAGO
-		, AA.canal_transacc
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.RUC_DISTRIBUIDOR -- ELIMINAR 
-		, AA.EJECUTIVO_ASIGNADO_PTR
-		, AA.AREA_PTR
-		, AA.CODIGO_VENDEDOR_DA_PTR
-		, AA.JEFATURA_PTR
-		, AA.CODIGO_USUARIO
-		, AA.CALF_RIESGO
-		, AA.CAP_ENDEU
-		, AA.VALOR_CRED
-		, AA.ACCOUNT_NUM_ANTERIOR
-		, AA.CIUDAD_USUARIO
-		, AA.PROVINCIA_USUARIO
-		, AA.ciudad
-		, AA.COD_PLAN_ANTERIOR
-		, AA.DES_PLAN_ANTERIOR
-		, AA.distribuidor_crm
-		, AA.TARIFA_FINAL_PLAN_ACT
-		, AA.descuento_tarifa_plan_act
-		, AA.tarifa_ov_plan_act
+		aa.tipo
+		, aa.telefono
+		, aa.fecha
+		, aa.canal
+		, aa.sub_canal
+		, aa.nuevo_sub_canal
+		, aa.distribuidor
+		, aa.oficina
+		--    		insertado COMISIONES  BIGD-677
+		, aa.sub_movimiento
+		, aa.imei
+		, aa.equipo
+		, aa.icc
+		, aa.domain_login_ow
+		, aa.nombre_usuario_ow
+		, aa.domain_login_sub
+		, aa.nombre_usuario_sub
+		, aa.forma_pago
+		, aa.canal_transacc
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.ruc_distribuidor -- eliminar 
+		, aa.ejecutivo_asignado_ptr
+		, aa.area_ptr
+		, aa.codigo_vendedor_da_ptr
+		, aa.jefatura_ptr
+		, aa.codigo_usuario
+		, aa.calf_riesgo
+		, aa.cap_endeu
+		, aa.valor_cred
+		, aa.account_num_anterior
+		, aa.ciudad_usuario
+		, aa.provincia_usuario
+		, aa.ciudad
+		, aa.cod_plan_anterior
+		, aa.des_plan_anterior
+		, aa.distribuidor_crm
+		, aa.tarifa_final_plan_act
+		, aa.descuento_tarifa_plan_act
+		, aa.tarifa_ov_plan_act
+		------------
 		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TIPO
-		, aa.TELEFONO
+                PARTITION BY aa.tipo
+		, aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.OTC_T_TRANSFER_HIST AS AA
+		${ESQUEMA_TABLA}.otc_t_transfer_hist AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
-		AND TIPO = 'PRE_POS'
-    ) XX
+		fecha < '${fecha_movimientos}'
+		AND tipo = 'PRE_POS'
+    ) xx
 WHERE
-	XX.rnum = 1;
+	xx.rnum = 1;
+
+	--N14
 --OBTIENE EL ÛŒTIMO EVENTO DE LOS CAMBIOS DE PLAN EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
 DROP TABLE ${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST_UNIC AS
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic AS
 SELECT
-	XX.TIPO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.CANAL
-	, XX.SUB_CANAL
-	, XX.NUEVO_SUB_CANAL
-	, XX.DISTRIBUIDOR
-	, XX.OFICINA
-	, XX.COD_PLAN_ANTERIOR
-	, XX.DES_PLAN_ANTERIOR
-	, XX.TB_DESCUENTO
-	, XX.TB_OVERRIDE
-	, XX.DELTA
-	--INSERTADO EN RF
-	, XX.SUB_MOVIMIENTO
-	, XX.DOMAIN_LOGIN_OW
-	, XX.NOMBRE_USUARIO_OW
-	, XX.DOMAIN_LOGIN_SUB
-	, XX.NOMBRE_USUARIO_SUB
-	, XX.FORMA_PAGO
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.RUC_DISTRIBUIDOR -- ELIMINAR
-	, XX.TARIFA_BASICA_ANTERIOR
-	, XX.FECHA_INICIO_PLAN_ANTERIOR
-	, XX.TARIFA_FINAL_PLAN_ACT
-	, XX.TARIFA_FINAL_PLAN_ANT
-	, XX.PROVINCIA
-	, XX.descripcion_descuento_plan_act
-	, XX.descuento_tarifa_plan_act
-	, XX.tarifa_plan_actual_ov
-	-------------XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX-------------------------------------
+	xx.tipo
+	, xx.telefono
+	, xx.fecha
+	, xx.canal
+	, xx.sub_canal
+	, xx.nuevo_sub_canal
+	, xx.distribuidor
+	, xx.oficina
+	, xx.cod_plan_anterior
+	, xx.des_plan_anterior
+	, xx.tb_descuento
+	, xx.tb_override
+	, xx.delta
+	--insertado COMISIONES  BIGD-677
+	, xx.sub_movimiento
+	, xx.domain_login_ow
+	, xx.nombre_usuario_ow
+	, xx.domain_login_sub
+	, xx.nombre_usuario_sub
+	, xx.forma_pago
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.ruc_distribuidor -- eliminar
+	, xx.tarifa_basica_anterior
+	, xx.fecha_inicio_plan_anterior
+	, xx.tarifa_final_plan_act
+	, xx.tarifa_final_plan_ant
+	, xx.provincia
+	, xx.descripcion_descuento_plan_act
+	, xx.descuento_tarifa_plan_act
+	, xx.tarifa_plan_actual_ov
+	-------------xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-------------------------------------
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.CANAL
-		, AA.SUB_CANAL
-		, AA.NUEVO_SUB_CANAL
-		, AA.DISTRIBUIDOR
-		, AA.OFICINA
-		, AA.COD_PLAN_ANTERIOR
-		, AA.DES_PLAN_ANTERIOR
-		, AA.TB_DESCUENTO
-		, AA.TB_OVERRIDE
-		, AA.DELTA
-		--INSERTADO EN RF
-		, AA.SUB_MOVIMIENTO
-		, AA.DOMAIN_LOGIN_OW
-		, AA.NOMBRE_USUARIO_OW
-		, AA.DOMAIN_LOGIN_SUB
-		, AA.NOMBRE_USUARIO_SUB
-		, AA.FORMA_PAGO
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.RUC_DISTRIBUIDOR  -- ELIMINAR
-		, AA.TARIFA_BASICA_ANTERIOR
-		, AA.FECHA_INICIO_PLAN_ANTERIOR
-		, AA.TARIFA_FINAL_PLAN_ACT
-		, AA.TARIFA_FINAL_PLAN_ANT
-		, AA.PROVINCIA
-		, AA.descripcion_descuento_plan_act
-		, AA.descuento_tarifa_plan_act
-		, AA.tarifa_plan_actual_ov
+		aa.tipo
+		, aa.telefono
+		, aa.fecha
+		, aa.canal
+		, aa.sub_canal
+		, aa.nuevo_sub_canal
+		, aa.distribuidor
+		, aa.oficina
+		, aa.cod_plan_anterior
+		, aa.des_plan_anterior
+		, aa.tb_descuento
+		, aa.tb_override
+		, aa.delta
+		--insertado COMISIONES  BIGD-677
+		, aa.sub_movimiento
+		, aa.domain_login_ow
+		, aa.nombre_usuario_ow
+		, aa.domain_login_sub
+		, aa.nombre_usuario_sub
+		, aa.forma_pago
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.ruc_distribuidor  -- eliminar
+		, aa.tarifa_basica_anterior
+		, aa.fecha_inicio_plan_anterior
+		, aa.tarifa_final_plan_act
+		, aa.tarifa_final_plan_ant
+		, aa.provincia
+		, aa.descripcion_descuento_plan_act
+		, aa.descuento_tarifa_plan_act
+		, aa.tarifa_plan_actual_ov
 		-----------------------------------------
 		, ROW_NUMBER() OVER (
-                PARTITION BY aa.TELEFONO
+                PARTITION BY aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST AS AA
+		${ESQUEMA_TABLA}.otc_t_cambio_plan_hist AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
-    ) XX
+		fecha < '${fecha_movimientos}'
+    ) xx
 WHERE
-	XX.rnum = 1;
---OBTIENE EL ÛŒTIMO EVENTO NO_RECICLABLE  EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
-DROP TABLE ${ESQUEMA_TABLA}.otc_t_no_reciclable_hist_unic;
+	xx.rnum = 1;
 
-CREATE TABLE ${ESQUEMA_TABLA}.OTC_T_NO_RECICLABLE_HIST_UNIC AS
+	--N15
+--OBTIENE EL ÛŒTIMO EVENTO NO_RECICLABLE  EN TODA LA HISTORIA HASTA LA FECHA DE PROCESO
+DROP TABLE ${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp_unic;
+
+CREATE TABLE ${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp_unic AS
 SELECT
-	XX.TIPO
-	, XX.SUB_MOVIMIENTO
-	, XX.TELEFONO
-	, XX.FECHA
-	, XX.DOCUMENTO_CLIENTE_ACT
-	, XX.FECHA_PROCESO
-	, XX.CANAL_COMERCIAL
-	, XX.CAMPANIA
-	, XX.CODIGO_DISTRIBUIDOR
-	, XX.NOM_DISTRIBUIDOR
-	, XX.CODIGO_PLAZA
-	, XX.NOM_PLAZA
-	, XX.REGION
-	, XX.RUC_DISTRIBUIDOR -- ELIMINAR
-	, XX.LINEA_NEGOCIO_BAJA
-	, XX.DOCUMENTO_CLIENTE_ANT
-	, XX.DIAS
-	, XX.FECHA_BAJA
+	xx.tipo
+	, xx.sub_movimiento
+	, xx.telefono
+	, xx.fecha
+	, xx.documento_cliente_act
+	, xx.fecha_proceso
+	, xx.canal_comercial
+	, xx.campania
+	, xx.codigo_distribuidor
+	, xx.nom_distribuidor
+	, xx.codigo_plaza
+	, xx.nom_plaza
+	, xx.region
+	, xx.ruc_distribuidor -- eliminar
+	, xx.linea_negocio_baja
+	, xx.documento_cliente_ant
+	, xx.dias
+	, xx.fecha_baja
 FROM
 	(
 	SELECT
-		AA.TIPO
-		, AA.SUB_MOVIMIENTO
-		, AA.TELEFONO
-		, AA.FECHA
-		, AA.DOCUMENTO_CLIENTE_ACT
-		, AA.FECHA_PROCESO
-		, AA.CANAL_COMERCIAL
-		, AA.CAMPANIA
-		, AA.CODIGO_DISTRIBUIDOR
-		, AA.NOM_DISTRIBUIDOR
-		, AA.CODIGO_PLAZA
-		, AA.NOM_PLAZA
-		, AA.REGION
-		, AA.RUC_DISTRIBUIDOR -- ELIMINAR
-		, AA.LINEA_NEGOCIO_BAJA
-		, AA.DOCUMENTO_CLIENTE_ANT
-		, AA.DIAS
-		, AA.FECHA_BAJA
+		aa.tipo
+		, aa.sub_movimiento
+		, aa.telefono
+		, aa.fecha
+		, aa.documento_cliente_act
+		, aa.fecha_proceso
+		, aa.canal_comercial
+		, aa.campania
+		, aa.codigo_distribuidor
+		, aa.nom_distribuidor
+		, aa.codigo_plaza
+		, aa.nom_plaza
+		, aa.region
+		, aa.ruc_distribuidor -- eliminar
+		, aa.linea_negocio_baja
+		, aa.documento_cliente_ant
+		, aa.dias
+		, aa.fecha_baja
 		------AAAAAAAAAAAAAAAAAAAAAAAAAAAAX------------------
 		, ROW_NUMBER() 
-          OVER (PARTITION BY aa.TIPO
-		, aa.TELEFONO
+          OVER (PARTITION BY aa.tipo
+		, aa.telefono
 	ORDER BY
-		aa.FECHA DESC
-            ) AS RNUM
+		aa.fecha DESC
+            ) AS rnum
 	FROM
-		${ESQUEMA_TABLA}.otc_t_no_reciclable_hist AS AA
+		${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp AS aa
 	WHERE
-		FECHA < '${fecha_movimientos}'
+		fecha < '${fecha_movimientos}'
 		---yyymmmdd
-		AND TIPO = 'NO_RECICLABLE'
-    ) XX
+		AND tipo = 'NO_RECICLABLE'
+    ) xx
 WHERE
-	XX.rnum = 1;
+	xx.rnum = 1;
 
+
+--N16
 ---- primera DEPENDENCIA 
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_no_parque_trnsfr_tmp;
 
 CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_no_parque_trnsfr_tmp AS
 SELECT
-	NUM_TELEFONICO AS TELEFONO
-	, CAST(FECHA_ALTA AS date) AS FECHA_ALTA
-	, FECHA_MOVIMIENTO_MES
-	, datediff(FECHA_MOVIMIENTO_MES
-	, FECHA_ALTA) AS dias_prepago
+	num_telefonico AS telefono
+	, CAST(fecha_alta AS date) AS fecha_alta
+	, fecha_movimiento_mes
+	, datediff(fecha_movimiento_mes, fecha_alta) AS dias_prepago
 FROM
 	--db_temporales.${TABLA_PIVOTANTE} 
 	db_desarrollo2021.otc_t_360_parque_1_tmp
 WHERE
-	LINEA_NEGOCIO_HOMOLOGADO = 'PREPAGO'
-	AND ES_PARQUE = 'NO'
-	AND TIPO_MOVIMIENTO_MES = 'TRANSFER_OUT';
+	linea_negocio_homologado = 'PREPAGO'
+	AND es_parque = 'NO'
+	AND tipo_movimiento_mes = 'TRANSFER_OUT';
+
+
+	--N17
 --REALIZAMOS EL CRUCE CON CADA TABLA USANDO LA TABLA PIVOT (TABLA RESULTANTE DE PIVOT_PARQUE) 
 --Y AGREANDO LOS CAMPOS DE CADA TABLA RENOMBRANDOLOS DE ACUERDO AL MOVIMIENTO QUE CORRESPONDA.
 --ESTA ES LA PRIMERA TABLA RESULTANTE QUE SERVIRA PARA ALIMENTAR LA ESTRUCTURA OTC_T_360_GENERAL.
@@ -1200,123 +1269,123 @@ DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_tmp_t_mov;
 
 CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_tmp_t_mov AS
 SELECT
-	Z.NUM_TELEFONICO
-	, Z.CODIGO_PLAN
-	, Z.FECHA_ALTA
-	, Z.FECHA_LAST_STATUS
-	, Z.ESTADO_ABONADO
-	, Z.FECHA_PROCESO
-	, Z.NUMERO_ABONADO
-	, Z.LINEA_NEGOCIO
+	z.num_telefonico
+	, z.codigo_plan
+	, z.fecha_alta
+	, z.fecha_last_status
+	, z.estado_abonado
+	, z.fecha_proceso
+	, z.numero_abonado
+	, z.linea_negocio
 	-- LA LINEA DE ABAJO SE HA MODIFICADO para incluir account num de los movimientos BAJAS Y ALTAS BAJAS REPROCESO
 	-- PARA LOS CUALES account num VIENE COMO null en la tabla pivotante
 	, (CASE
-		WHEN Z.ACCOUNT_NUM IS NULL THEN nvl(G.ACCOUNT_NUM, abr.ACCOUNT_NUM)
-		ELSE Z.ACCOUNT_NUM	END) AS ACCOUNT_NUM
-	, Z.SUB_SEGMENTO
-	, Z.TIPO_DOC_CLIENTE
-	, Z.IDENTIFICACION_CLIENTE
-	, Z.CLIENTE
-	, Z.CUSTOMER_REF
-	, Z.COUNTED_DAYS
-	, Z.LINEA_NEGOCIO_HOMOLOGADO
-	, Z.CATEGORIA_PLAN
-	, Z.TARIFA
-	, Z.NOMBRE_PLAN
-	, Z.MARCA
-	, Z.CICLO_FACT
-	, Z.CORREO_CLIENTE_PR
-	, Z.TELEFONO_CLIENTE_PR
-	, Z.IMEI
-	, Z.ORDEN
-	, Z.TIPO_MOVIMIENTO_MES
-	, Z.FECHA_MOVIMIENTO_MES
-	, Z.ES_PARQUE
-	, Z.BANCO
-	, A.FECHA AS FECHA_ALTA_HISTORICA
-	, A.CANAL AS CANAL_ALTA
-	, A.SUB_CANAL AS SUB_CANAL_ALTA
-	, A.NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_ALTA
-	, A.DISTRIBUIDOR AS DISTRIBUIDOR_ALTA
-	, A.OFICINA AS OFICINA_ALTA
-	, nvl(A.PORTABILIDAD, abr.PORTABILIDAD) AS PORTABILIDAD
-	, A.OPERADORA_ORIGEN
-	, A.OPERADORA_DESTINO
+		WHEN z.account_num IS NULL THEN nvl(g.account_num, abr.account_num)
+		ELSE z.account_num	END) AS account_num
+	, z.sub_segmento
+	, z.tipo_doc_cliente
+	, z.identificacion_cliente
+	, z.cliente
+	, z.customer_ref
+	, z.counted_days
+	, z.linea_negocio_homologado
+	, z.categoria_plan
+	, z.tarifa
+	, z.nombre_plan
+	, z.marca
+	, z.ciclo_fact
+	, z.correo_cliente_pr
+	, z.telefono_cliente_pr
+	, z.imei
+	, z.orden
+	, z.tipo_movimiento_mes
+	, z.fecha_movimiento_mes
+	, z.es_parque
+	, z.banco
+	, a.fecha AS fecha_alta_historica
+	, a.canal AS canal_alta
+	, a.sub_canal AS sub_canal_alta
+	, a.nuevo_sub_canal AS nuevo_sub_canal_alta
+	, a.distribuidor AS distribuidor_alta
+	, a.oficina AS oficina_alta
+	, nvl(a.portabilidad, abr.portabilidad) AS portabilidad
+	, a.operadora_origen
+	, a.operadora_destino
 	---nvl aniadido en REFACTORING, AL MOMENTO LA LINEA COMENTADA DE ABAJO 
 	--- SOLO TRAE NULLS Y VACIOS, CON ESTE CAMBIO SE INCLUYEN LOS DE BAJAS 
 	--,A.MOTIVO
-	, NVL(G.MOTIVO, A.MOTIVO) AS MOTIVO
-	, C.FECHA AS FECHA_PRE_POS
-	, C.CANAL AS CANAL_PRE_POS
-	, C.SUB_CANAL AS SUB_CANAL_PRE_POS
-	, C.NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_PRE_POS
-	, C.DISTRIBUIDOR AS DISTRIBUIDOR_PRE_POS
-	, C.OFICINA AS OFICINA_PRE_POS
-	, D.FECHA AS FECHA_POS_PRE
-	, D.CANAL AS CANAL_POS_PRE
-	, D.SUB_CANAL AS SUB_CANAL_POS_PRE
-	, D.NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_POS_PRE
-	, D.DISTRIBUIDOR AS DISTRIBUIDOR_POS_PRE
-	, D.OFICINA AS OFICINA_POS_PRE
-	, E.FECHA AS FECHA_CAMBIO_PLAN
-	, E.CANAL AS CANAL_CAMBIO_PLAN
-	, E.SUB_CANAL AS SUB_CANAL_CAMBIO_PLAN
-	, E.NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_CAMBIO_PLAN
-	, E.DISTRIBUIDOR AS DISTRIBUIDOR_CAMBIO_PLAN
-	, E.OFICINA AS OFICINA_CAMBIO_PLAN
-	, nvl(nvl(E.COD_PLAN_ANTERIOR, D.COD_PLAN_ANTERIOR), C.COD_PLAN_ANTERIOR) AS COD_PLAN_ANTERIOR
-	, nvl(nvl(E.DES_PLAN_ANTERIOR, D.DES_PLAN_ANTERIOR), C.DES_PLAN_ANTERIOR) AS DES_PLAN_ANTERIOR
-	, E.TB_DESCUENTO
-	, E.TB_OVERRIDE
-	, E.DELTA
+	, nvl(g.motivo, a.motivo) AS motivo
+	, c.fecha AS fecha_pre_pos
+	, c.canal AS canal_pre_pos
+	, c.sub_canal AS sub_canal_pre_pos
+	, c.nuevo_sub_canal AS nuevo_sub_canal_pre_pos
+	, c.distribuidor AS distribuidor_pre_pos
+	, c.oficina AS oficina_pre_pos
+	, d.fecha AS fecha_pos_pre
+	, d.canal AS canal_pos_pre
+	, d.sub_canal AS sub_canal_pos_pre
+	, d.nuevo_sub_canal AS nuevo_sub_canal_pos_pre
+	, d.distribuidor AS distribuidor_pos_pre
+	, d.oficina AS oficina_pos_pre
+	, e.fecha AS fecha_cambio_plan
+	, e.canal AS canal_cambio_plan
+	, e.sub_canal AS sub_canal_cambio_plan
+	, e.nuevo_sub_canal AS nuevo_sub_canal_cambio_plan
+	, e.distribuidor AS distribuidor_cambio_plan
+	, e.oficina AS oficina_cambio_plan
+	, nvl(nvl(e.cod_plan_anterior, d.cod_plan_anterior), c.cod_plan_anterior) AS cod_plan_anterior
+	, nvl(nvl(e.des_plan_anterior, d.des_plan_anterior), c.des_plan_anterior) AS des_plan_anterior
+	, e.tb_descuento
+	, e.tb_override
+	, e.delta
 	-----------\/\/\/\/\/\/\/\/\/\/\/\/------------
 	-----------INSERTADO EN REFACTORING------------
-	, A.COD_CATEGORIA
-	, A.COD_DA
-	, A.NOM_USUARIO
-	, A.PROVINCIA_IVR
-	, A.PROVINCIA_MS
+	, a.cod_categoria
+	, a.cod_da
+	, a.nom_usuario
+	, a.provincia_ivr
+	, a.provincia_ms
 	, (CASE 
-		WHEN UPPER(B.LINEA_NEGOCIO_BAJA) LIKE 'POSPAGO VPN' THEN 'POSPAGO'
-		WHEN UPPER(B.LINEA_NEGOCIO_BAJA) LIKE '%H%BRIDO%' THEN 'POSPAGO'
-		ELSE UPPER(B.LINEA_NEGOCIO_BAJA) END)	AS LINEA_DE_NEGOCIO_ANTERIOR
-	, B.DOCUMENTO_CLIENTE_ANT AS CLIENTE_ANTERIOR
-	, B.DIAS AS DIAS_RECICLAJE
-	, B.FECHA_BAJA AS FECHA_BAJA_RECICLADA
-	, D.ACCOUNT_NUM_ANTERIOR
-	, E.TARIFA_BASICA_ANTERIOR
-	, E.FECHA_INICIO_PLAN_ANTERIOR
-	, nvl(nvl(E.TARIFA_FINAL_PLAN_ACT, A.TARIFA_FINAL_PLAN_ACT), C.TARIFA_FINAL_PLAN_ACT) AS TARIFA_FINAL_PLAN_ACT
-	, nvl(nvl(E.descuento_tarifa_plan_act, A.descuento_tarifa_plan_act), C.descuento_tarifa_plan_act) AS descuento_tarifa_plan_act
-	, nvl(nvl(E.tarifa_plan_actual_ov, A.tarifa_plan_actual_ov), C.tarifa_ov_plan_act) AS tarifa_plan_actual_ov
-	, nvl(E.descripcion_descuento_plan_act, A.descripcion_descuento_plan_act) AS descripcion_descuento_plan_act
-	, E.TARIFA_FINAL_PLAN_ANT
+		WHEN UPPER(b.linea_negocio_baja) LIKE 'POSPAGO VPN' THEN 'POSPAGO'
+		WHEN UPPER(b.linea_negocio_baja) LIKE '%H%BRIDO%' THEN 'POSPAGO'
+		ELSE UPPER(b.linea_negocio_baja) END)	AS linea_de_negocio_anterior
+	, b.documento_cliente_ant AS cliente_anterior
+	, b.dias AS dias_reciclaje
+	, b.fecha_baja AS fecha_baja_reciclada
+	, d.account_num_anterior
+	, e.tarifa_basica_anterior
+	, e.fecha_inicio_plan_anterior
+	, nvl(nvl(e.tarifa_final_plan_act, a.tarifa_final_plan_act), c.tarifa_final_plan_act) AS tarifa_final_plan_act
+	, nvl(nvl(e.descuento_tarifa_plan_act, a.descuento_tarifa_plan_act), c.descuento_tarifa_plan_act) AS descuento_tarifa_plan_act
+	, nvl(nvl(e.tarifa_plan_actual_ov, a.tarifa_plan_actual_ov), c.tarifa_ov_plan_act) AS tarifa_plan_actual_ov
+	, nvl(e.descripcion_descuento_plan_act, a.descripcion_descuento_plan_act) AS descripcion_descuento_plan_act
+	, e.tarifa_final_plan_ant
 	--NVL ANIADIDO PARA INCLUIR LA FECHA DE BAJA DE LAS ALTAS_BAJAS_REPROCESO
 	--, G.FECHA as  FECHA_MOVIMIENTO_BAJA
 	, (CASE
-		WHEN Z.TIPO_MOVIMIENTO_MES = 'BAJA' THEN G.FECHA
-		ELSE D.FECHA END) AS FECHA_MOVIMIENTO_BAJA
-	, G.VOL_INVOL
+		WHEN z.tipo_movimiento_mes = 'BAJA' THEN g.fecha
+		ELSE d.fecha END) AS fecha_movimiento_baja
+	, g.vol_invol
 	, (CASE
-		WHEN C.FECHA IS NOT NULL THEN
+		WHEN c.fecha IS NOT NULL THEN
 		(CASE 
-			WHEN Z.ESTADO_ABONADO = TO_MES_ANT.ESTADO_ABONADO
+			WHEN z.estado_abonado = to_mes_ant.estado_abonado
 			THEN 'SI'
-			WHEN Z.ESTADO_ABONADO = A_MES_ANT.ESTADO_ABONADO   
+			WHEN z.estado_abonado = a_mes_ant.estado_abonado   
 			THEN 'SI'
-			ELSE 'NO'		END)	END) AS MISMO_CLIENTE
+			ELSE 'NO'		END)	END) AS mismo_cliente
 	, (CASE
-		WHEN Z.TIPO_MOVIMIENTO_MES LIKE 'TRANSFER_IN' THEN	NPT.dias_prepago
-	END) AS DIAS_EN_PARQUE_PREPAGO
+		WHEN z.tipo_movimiento_mes LIKE 'TRANSFER_IN' THEN	npt.dias_prepago
+	END) AS dias_en_parque_prepago
 	, (CASE
-		WHEN E.FECHA_INICIO_PLAN_ANTERIOR IS NULL
-		AND E.FECHA > A.FECHA
-		THEN datediff(E.FECHA, A.FECHA)
-		ELSE datediff(E.FECHA, E.FECHA_INICIO_PLAN_ANTERIOR)
-		END) AS DIAS_EN_PARQUE
+		WHEN e.fecha_inicio_plan_anterior IS NULL
+		AND e.fecha > a.fecha
+		THEN datediff(e.fecha, a.fecha)
+		ELSE datediff(e.fecha, e.fecha_inicio_plan_anterior)
+		END) AS dias_en_parque
 	, (CASE
-		WHEN Z.TIPO_MOVIMIENTO_MES = 'TRANSFER_IN' THEN 
-		NPT.FECHA_ALTA	END) AS FECHA_ALTA_PREPAGO
+		WHEN z.tipo_movimiento_mes = 'TRANSFER_IN' THEN 
+		npt.fecha_alta	END) AS fecha_alta_prepago
 	--------------FIN REFACTORING-----------------
 	-----_______/\/\/\/\/\/\/\/\/\/\/\_____----
 	--check! CAMBIO EN RF ${ESQUEMA_TEMP}POR db_temporales,   cambiar en produccion
@@ -1325,534 +1394,554 @@ FROM
 	db_desarrollo2021.otc_t_360_parque_1_tmp AS Z
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_alta_hist_unic AS A 
     ON
-	(Z.NUM_TELEFONICO = A.TELEFONO)
+	(z.num_telefonico = a.telefono)
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic AS C 
     ON
-	(Z.NUM_TELEFONICO = C.TELEFONO)
-	AND (Z.linea_negocio_homologado <> 'PREPAGO')
+	(z.num_telefonico = c.telefono)
+	AND (z.linea_negocio_homologado <> 'PREPAGO')
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic AS D 
     ON
-	(Z.NUM_TELEFONICO = D.TELEFONO)
-	AND (Z.linea_negocio_homologado = 'PREPAGO')
+	(z.num_telefonico = D.TELEFONO)
+	AND (z.linea_negocio_homologado = 'PREPAGO')
 	-- LINEA_NEGOCIO_HOMOLOGADO SOLO ES PREPAGO  ,   POSPAGO O HOME
 LEFT JOIN ${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic AS E 
     ON
-	(Z.NUM_TELEFONICO = E.TELEFONO)
-	AND (Z.linea_negocio_homologado <> 'PREPAGO')
+	(z.num_telefonico = E.TELEFONO)
+	AND (z.linea_negocio_homologado <> 'PREPAGO')
 	---------&&&&&&&&&&&&&&&&---------------
 	------INICIO REFACTORING 
 LEFT JOIN ${ESQUEMA_CS_ALTAS}.otc_t_altas_bi AS A_MES_ANT 
     ON
-	(Z.NUM_TELEFONICO = A_MES_ANT.TELEFONO)
+	(z.num_telefonico = a_mes_ant.telefono)
 	AND
-	(Z.IDENTIFICACION_CLIENTE = A_MES_ANT.documento_cliente)
+	(z.identificacion_cliente = a_mes_ant.documento_cliente)
 	AND
-	(A_MES_ANT.P_FECHA_PROCESO = '${fecha_mes_ant_cp}')
+	(a_mes_ant.p_fecha_proceso = '${fecha_mes_ant_cp}')
 	AND
-	(A_MES_ANT.LINEA_NEGOCIO = 'PREPAGO')
-LEFT JOIN ${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi AS TO_MES_ANT 
+	(a_mes_ant.linea_negocio = 'PREPAGO')
+LEFT JOIN ${ESQUEMA_CS_ALTAS}.otc_t_transfer_out_bi AS to_mes_ant 
     ON
-	(Z.NUM_TELEFONICO = TO_MES_ANT.TELEFONO)
+	(z.num_telefonico = to_mes_ant.telefono)
 	AND
-	(Z.IDENTIFICACION_CLIENTE = TO_MES_ANT.documento_cliente)
+	(z.identificacion_cliente = to_mes_ant.documento_cliente)
 	AND
-	(TO_MES_ANT.P_FECHA_PROCESO = '${fecha_mes_ant_cp}')
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_baja_hist_unic AS G 
+	(to_mes_ant.p_fecha_proceso = '${fecha_mes_ant_cp}')
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_baja_hist_unic AS g 
     ON
-	(Z.NUM_TELEFONICO = G.TELEFONO)
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_no_reciclable_hist_unic AS B 
+	(z.num_telefonico = g.telefono)
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp_unic AS b 
     ON
-	(NUM_TELEFONICO = B.TELEFONO)
-LEFT JOIN ${ESQUEMA_TABLA}.otc_t_alta_baja_reproceso_hist AS abr 
+	(num_telefonico = b.telefono)
+LEFT JOIN ${ESQUEMA_TABLA}.otc_t_mp_alta_baja_rep AS abr 
     ON 
-	(NUM_TELEFONICO = abr.TELEFONO)
-LEFT JOIN ${ESQUEMA_TEMP}.otc_t_360_no_parque_trnsfr_tmp AS NPT
+	(num_telefonico = abr.telefono)
+LEFT JOIN ${ESQUEMA_TEMP}.otc_t_360_no_parque_trnsfr_tmp AS npt
 ON
-	(Z.NUM_TELEFONICO = NPT.TELEFONO)
+	(z.num_telefonico = npt.telefono)
 	------FIN REFACTORING
 	-------&&&&&&&&&&&&&&&-----------------
     ;
+
+
+	--N18
 --CREAMOS TABLA TEMPORAL UNION PARA OBTENER ULTIMO MOVIMIENTO DEL MES POR NUM_TELEFONO
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp_2;
 
-CREATE TABLE ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2 AS
+CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp_2 AS
 SELECT
-	TIPO
-	, TELEFONO
-	, FECHA AS FECHA_MOVIMIENTO_MES
-	, CANAL AS CANAL_MOVIMIENTO_MES
-	, SUB_CANAL AS SUB_CANAL_MOVIMIENTO_MES
-	, NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_MOVIMIENTO_MES
-	, DISTRIBUIDOR AS DISTRIBUIDOR_MOVIMIENTO_MES
-	, OFICINA AS OFICINA_MOVIMIENTO_MES
-	, PORTABILIDAD AS PORTABILIDAD_MOVIMIENTO_MES
-	, OPERADORA_ORIGEN AS OPERADORA_ORIGEN_MOVIMIENTO_MES
-	, OPERADORA_DESTINO AS OPERADORA_DESTINO_MOVIMIENTO_MES
-	, MOTIVO AS MOTIVO_MOVIMIENTO_MES
-	, COD_PLAN_ANTERIOR AS COD_PLAN_ANTERIOR_MOVIMIENTO_MES
-	, DES_PLAN_ANTERIOR AS DES_PLAN_ANTERIOR_MOVIMIENTO_MES
-	, TB_DESCUENTO AS TB_DESCUENTO_MOVIMIENTO_MES
-	, TB_OVERRIDE AS TB_OVERRIDE_MOVIMIENTO_MES
-	, DELTA AS DELTA_MOVIMIENTO_MES
-	--insertado en rf para unir campos y llevarlos a 360_general
-	, SUB_MOVIMIENTO
-	, IMEI
-	, EQUIPO
-	, ICC
-	, DOMAIN_LOGIN_OW
-	, NOMBRE_USUARIO_OW
-	, DOMAIN_LOGIN_SUB
-	, NOMBRE_USUARIO_SUB
-	, FORMA_PAGO
-	, EJECUTIVO_ASIGNADO_PTR
-	, AREA_PTR
-	, CODIGO_VENDEDOR_DA_PTR
-	, JEFATURA_PTR
-	, CODIGO_USUARIO
-	, CALF_RIESGO
-	, CAP_ENDEU
-	, VALOR_CRED
-	, CIUDAD_USUARIO
-	, PROVINCIA_USUARIO
-	, CIUDAD
-	, provincia AS PROVINCIA_ACTIVACION
+	tipo
+	, telefono
+	, fecha as fecha_movimiento_mes
+	, canal as canal_movimiento_mes
+	, sub_canal as sub_canal_movimiento_mes
+	, nuevo_sub_canal as nuevo_sub_canal_movimiento_mes
+	, distribuidor as distribuidor_movimiento_mes
+	, oficina as oficina_movimiento_mes
+	, portabilidad as portabilidad_movimiento_mes
+	, operadora_origen as operadora_origen_movimiento_mes
+	, operadora_destino as operadora_destino_movimiento_mes
+	, motivo as motivo_movimiento_mes
+	, cod_plan_anterior as cod_plan_anterior_movimiento_mes
+	, des_plan_anterior as des_plan_anterior_movimiento_mes
+	, tb_descuento as tb_descuento_movimiento_mes
+	, tb_override as tb_override_movimiento_mes
+	, delta as delta_movimiento_mes
+	--insertado COMISIONES  BIGD-677 para unir campos y llevarlos a 360_general
+	, sub_movimiento
+	, imei
+	, equipo
+	, icc
+	, domain_login_ow
+	, nombre_usuario_ow
+	, domain_login_sub
+	, nombre_usuario_sub
+	, forma_pago
+	, ejecutivo_asignado_ptr
+	, area_ptr
+	, codigo_vendedor_da_ptr
+	, jefatura_ptr
+	, codigo_usuario
+	, calf_riesgo
+	, cap_endeu
+	, valor_cred
+	, ciudad_usuario
+	, provincia_usuario
+	, ciudad
+	, provincia as provincia_activacion
 	, distribuidor_crm
 	, canal_transacc
-	, nom_plaza AS nom_plaza_MOVIMIENTO_MES
-	, CODIGO_DISTRIBUIDOR AS CODIGO_DISTRIBUIDOR_MOVIMIENTO_MES
+	, nom_plaza as nom_plaza_movimiento_mes
+	, codigo_distribuidor as codigo_distribuidor_movimiento_mes
 	, cod_da
-	, CAMPANIA AS CAMPANIA_MOVIMIENTO_MES
-	, REGION 
+	, campania as campania_movimiento_mes
+	, region 
 	-- FIN REFACTORING
 FROM
 	(
 	SELECT
-		TIPO
-		, TELEFONO
-		, FECHA
-		, CANAL
-		, SUB_CANAL
-		, NUEVO_SUB_CANAL
-		, DISTRIBUIDOR
-		, OFICINA
-		, PORTABILIDAD
-		, OPERADORA_ORIGEN
-		, OPERADORA_DESTINO
-		, MOTIVO
-		, COD_PLAN_ANTERIOR
-		, DES_PLAN_ANTERIOR
-		, TB_DESCUENTO
-		, TB_OVERRIDE
-		, DELTA
+		tipo
+		, telefono
+		, fecha
+		, canal
+		, sub_canal
+		, nuevo_sub_canal
+		, distribuidor
+		, oficina
+		, portabilidad
+		, operadora_origen
+		, operadora_destino
+		, motivo
+		, cod_plan_anterior
+		, des_plan_anterior
+		, tb_descuento
+		, tb_override
+		, delta
 		--
-        , SUB_MOVIMIENTO  
-		, IMEI
-		, EQUIPO
-		, ICC
-		, DOMAIN_LOGIN_OW
-		, NOMBRE_USUARIO_OW
-		, DOMAIN_LOGIN_SUB
-		, NOMBRE_USUARIO_SUB
-		, FORMA_PAGO
-		, EJECUTIVO_ASIGNADO_PTR
-		, AREA_PTR
-		, CODIGO_VENDEDOR_DA_PTR
-		, JEFATURA_PTR
-		, CODIGO_USUARIO
-		, CALF_RIESGO
-		, CAP_ENDEU
-		, VALOR_CRED
-		, CIUDAD_USUARIO
-		, PROVINCIA_USUARIO
-		, CIUDAD
-		, PROVINCIA
+        , sub_movimiento  
+		, imei
+		, equipo
+		, icc
+		, domain_login_ow
+		, nombre_usuario_ow
+		, domain_login_sub
+		, nombre_usuario_sub
+		, forma_pago
+		, ejecutivo_asignado_ptr
+		, area_ptr
+		, codigo_vendedor_da_ptr
+		, jefatura_ptr
+		, codigo_usuario
+		, calf_riesgo
+		, cap_endeu
+		, valor_cred
+		, ciudad_usuario
+		, provincia_usuario
+		, ciudad
+		, provincia
 		, distribuidor_crm
 		, canal_transacc
 		, nom_plaza
-		, CODIGO_DISTRIBUIDOR
+		, codigo_distribuidor
 		, cod_da
-		, CAMPANIA
-		, REGION
+		, campania
+		, region
 		, ROW_NUMBER() OVER (
-                PARTITION BY TELEFONO
+                PARTITION BY telefono
 	ORDER BY
-		FECHA DESC
-            ) AS RNUM
+		fecha DESC
+            ) AS rnum
 	FROM
 		(
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CAST(NULL AS STRING) AS CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
-			, COD_PLAN_ANTERIOR
-			, DES_PLAN_ANTERIOR
-			, TB_DESCUENTO
-			, TB_OVERRIDE
-			, DELTA
+			tipo
+			, telefono
+			, fecha
+			, CAST(NULL AS STRING) AS canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
+			, cod_plan_anterior
+			, des_plan_anterior
+			, tb_descuento
+			, tb_override
+			, delta
 			--
-            , SUB_MOVIMIENTO 
-			, CAST(NULL AS STRING) AS IMEI
-			, CAST(NULL AS STRING) AS EQUIPO
-			, CAST(NULL AS STRING) AS ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, CAST(NULL AS STRING) AS EJECUTIVO_ASIGNADO_PTR
-			, CAST(NULL AS STRING) AS AREA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_VENDEDOR_DA_PTR
-			, CAST(NULL AS STRING) AS JEFATURA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_USUARIO
-			, CAST(NULL AS STRING) AS CALF_RIESGO
-			, CAST(NULL AS STRING) AS CAP_ENDEU
-			, CAST(NULL AS INT) AS VALOR_CRED
-			, CAST(NULL AS STRING) AS CIUDAD_USUARIO
-			, CAST(NULL AS STRING) AS PROVINCIA_USUARIO
-			, CAST(NULL AS STRING) AS CIUDAD
-			, PROVINCIA
+            , sub_movimiento 
+			, CAST(NULL AS STRING) AS imei
+			, CAST(NULL AS STRING) AS equipo
+			, CAST(NULL AS STRING) AS icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, CAST(NULL AS STRING) AS ejecutivo_asignado_ptr
+			, CAST(NULL AS STRING) AS area_ptr
+			, CAST(NULL AS STRING) AS codigo_vendedor_da_ptr
+			, CAST(NULL AS STRING) AS jefatura_ptr
+			, CAST(NULL AS STRING) AS codigo_usuario
+			, CAST(NULL AS STRING) AS calf_riesgo
+			, CAST(NULL AS STRING) AS cap_endeu
+			, CAST(NULL AS INT) AS valor_cred
+			, CAST(NULL AS STRING) AS ciudad_usuario
+			, CAST(NULL AS STRING) AS provincia_usuario
+			, CAST(NULL AS STRING) AS ciudad
+			, provincia
 			, CAST(NULL AS STRING) AS distribuidor_crm
 			, CAST(NULL AS STRING) AS canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, CAST(NULL AS STRING) AS cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_CAMBIO_PLAN_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_cambio_plan_hist_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
-			, COD_PLAN_ANTERIOR
-			, DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
+			, cod_plan_anterior
+			, des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
 			--
-            , SUB_MOVIMIENTO  
-			, IMEI
-			, EQUIPO
-			, ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, EJECUTIVO_ASIGNADO_PTR
-			, AREA_PTR
-			, CODIGO_VENDEDOR_DA_PTR
-			, JEFATURA_PTR
-			, CODIGO_USUARIO
-			, CALF_RIESGO
-			, CAP_ENDEU
-			, VALOR_CRED
-			, CIUDAD_USUARIO
-			, PROVINCIA_USUARIO
-			, CIUDAD
-			, CAST(NULL AS STRING) AS PROVINCIA
+            , sub_movimiento  
+			, imei
+			, equipo
+			, icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, ejecutivo_asignado_ptr
+			, area_ptr
+			, codigo_vendedor_da_ptr
+			, jefatura_ptr
+			, codigo_usuario
+			, calf_riesgo
+			, cap_endeu
+			, valor_cred
+			, ciudad_usuario
+			, provincia_usuario
+			, ciudad
+			, CAST(NULL AS STRING) AS provincia
 			, distribuidor_crm
 			, canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, CAST(NULL AS STRING) AS cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_POS_PRE_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
-			, COD_PLAN_ANTERIOR
-			, DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
+			, cod_plan_anterior
+			, des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
 			--
-            , SUB_MOVIMIENTO  
-			, IMEI
-			, EQUIPO
-			, ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, EJECUTIVO_ASIGNADO_PTR
-			, AREA_PTR
-			, CODIGO_VENDEDOR_DA_PTR
-			, JEFATURA_PTR
-			, CODIGO_USUARIO
-			, CALF_RIESGO
-			, CAP_ENDEU
-			, VALOR_CRED
-			, CIUDAD_USUARIO
-			, PROVINCIA_USUARIO
-			, CIUDAD
-			, CAST(NULL AS STRING) AS PROVINCIA
+            , sub_movimiento  
+			, imei
+			, equipo
+			, icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, ejecutivo_asignado_ptr
+			, area_ptr
+			, codigo_vendedor_da_ptr
+			, jefatura_ptr
+			, codigo_usuario
+			, calf_riesgo
+			, cap_endeu
+			, valor_cred
+			, ciudad_usuario
+			, provincia_usuario
+			, ciudad
+			, CAST(NULL AS STRING) AS provincia
 			, distribuidor_crm
 			, canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, CAST(NULL AS STRING) AS cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_PRE_POS_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, PORTABILIDAD
-			, OPERADORA_ORIGEN
-			, OPERADORA_DESTINO
-			, MOTIVO
-			, CAST(NULL AS STRING) AS COD_PLAN_ANTERIOR
-			, CAST(NULL AS STRING) AS DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
-			, SUB_MOVIMIENTO
-			, IMEI
-			, EQUIPO
-			, ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, EJECUTIVO_ASIGNADO_PTR
-			, AREA_PTR
-			, CODIGO_VENDEDOR_DA_PTR
-			, JEFATURA_PTR
-			, CODIGO_USUARIO
-			, CALF_RIESGO
-			, CAP_ENDEU
-			, VALOR_CRED
-			, CAST(NULL AS STRING) AS CIUDAD_USUARIO
-			, CAST(NULL AS STRING) AS PROVINCIA_USUARIO
-			, CIUDAD
-			, PROVINCIA
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, portabilidad
+			, operadora_origen
+			, operadora_destino
+			, motivo
+			, CAST(NULL AS STRING) AS cod_plan_anterior
+			, CAST(NULL AS STRING) AS des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
+			, sub_movimiento
+			, imei
+			, equipo
+			, icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, ejecutivo_asignado_ptr
+			, area_ptr
+			, codigo_vendedor_da_ptr
+			, jefatura_ptr
+			, codigo_usuario
+			, calf_riesgo
+			, cap_endeu
+			, valor_cred
+			, CAST(NULL AS STRING) AS ciudad_usuario
+			, CAST(NULL AS STRING) AS provincia_usuario
+			, ciudad
+			, provincia
 			, distribuidor_crm
 			, canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_BAJA_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_baja_hist_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
-			--- INSERTADO EN RF
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			--- INSERTADO COMISIONES  BIGD-677
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CAST(NULL AS STRING) AS CANAL
-			, CAST(NULL AS STRING) AS SUB_CANAL
-			, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
-			, CAST(NULL AS STRING) AS DISTRIBUIDOR
-			, CAST(NULL AS STRING) AS OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
-			, CAST(NULL AS STRING) AS COD_PLAN_ANTERIOR
-			, CAST(NULL AS STRING) AS DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
+			tipo
+			, telefono
+			, fecha
+			, CAST(NULL AS STRING) AS canal
+			, CAST(NULL AS STRING) AS sub_canal
+			, CAST(NULL AS STRING) AS nuevo_sub_canal
+			, CAST(NULL AS STRING) AS distribuidor
+			, CAST(NULL AS STRING) AS oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
+			, CAST(NULL AS STRING) AS cod_plan_anterior
+			, CAST(NULL AS STRING) AS des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
 			--
-            , SUB_MOVIMIENTO  
-			, CAST(NULL AS STRING) AS IMEI
-			, CAST(NULL AS STRING) AS EQUIPO
-			, CAST(NULL AS STRING) AS ICC
-			, CAST(NULL AS STRING) AS DOMAIN_LOGIN_OW
-			, CAST(NULL AS STRING) AS NOMBRE_USUARIO_OW
-			, CAST(NULL AS STRING) AS DOMAIN_LOGIN_SUB
-			, CAST(NULL AS STRING) AS NOMBRE_USUARIO_SUB
-			, CAST(NULL AS STRING) AS FORMA_PAGO
-			, CAST(NULL AS STRING) AS EJECUTIVO_ASIGNADO_PTR
-			, CAST(NULL AS STRING) AS AREA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_VENDEDOR_DA_PTR
-			, CAST(NULL AS STRING) AS JEFATURA_PTR
-			, CAST(NULL AS STRING) AS CODIGO_USUARIO
-			, CAST(NULL AS STRING) AS CALF_RIESGO
-			, CAST(NULL AS STRING) AS CAP_ENDEU
-			, CAST(NULL AS INT) AS VALOR_CRED
-			, CAST(NULL AS STRING) AS CIUDAD_USUARIO
-			, CAST(NULL AS STRING) AS PROVINCIA_USUARIO
-			, CAST(NULL AS STRING) AS CIUDAD
-			, CAST(NULL AS STRING) AS PROVINCIA
+            , sub_movimiento  
+			, CAST(NULL AS STRING) AS imei
+			, CAST(NULL AS STRING) AS equipo
+			, CAST(NULL AS STRING) AS icc
+			, CAST(NULL AS STRING) AS domain_login_ow
+			, CAST(NULL AS STRING) AS nombre_usuario_ow
+			, CAST(NULL AS STRING) AS domain_login_sub
+			, CAST(NULL AS STRING) AS nombre_usuario_sub
+			, CAST(NULL AS STRING) AS forma_pago
+			, CAST(NULL AS STRING) AS ejecutivo_asignado_ptr
+			, CAST(NULL AS STRING) AS area_ptr
+			, CAST(NULL AS STRING) AS codigo_vendedor_da_ptr
+			, CAST(NULL AS STRING) AS jefatura_ptr
+			, CAST(NULL AS STRING) AS codigo_usuario
+			, CAST(NULL AS STRING) AS calf_riesgo
+			, CAST(NULL AS STRING) AS cap_endeu
+			, CAST(NULL AS INT) AS valor_cred
+			, CAST(NULL AS STRING) AS ciudad_usuario
+			, CAST(NULL AS STRING) AS provincia_usuario
+			, CAST(NULL AS STRING) AS ciudad
+			, CAST(NULL AS STRING) AS provincia
 			, CAST(NULL AS STRING) AS distribuidor_crm
 			, CAST(NULL AS STRING) AS canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, CAST(NULL AS STRING) AS cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_NO_RECICLABLE_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_mp_no_reciclable_tmp_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, fecha_baja AS FECHA
-			, CANAL
-			, SUB_CANAL
-			, CAST(NULL AS STRING) AS NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, PORTABILIDAD
-			, OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
-			, CAST(NULL AS STRING) AS COD_PLAN_ANTERIOR
-			, CAST(NULL AS STRING) AS DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
+			tipo
+			, telefono
+			, fecha_baja AS fecha
+			, canal
+			, sub_canal
+			, CAST(NULL AS STRING) AS nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, portabilidad
+			, operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
+			, CAST(NULL AS STRING) AS cod_plan_anterior
+			, CAST(NULL AS STRING) AS des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
 			----------------------------------------------------------
-			, SUB_MOVIMIENTO
-			, IMEI
-			, EQUIPO
-			, ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, EJECUTIVO_ASIGNADO_PTR
-			, AREA_PTR
-			, CODIGO_VENDEDOR_DA_PTR
-			, JEFATURA_PTR
-			, CODIGO_USUARIO
-			, CALF_RIESGO
-			, CAP_ENDEU
-			, VALOR_CRED
-			, CAST(NULL AS STRING) AS CIUDAD_USUARIO
-			, CAST(NULL AS STRING) AS PROVINCIA_USUARIO
-			, CAST(NULL AS STRING) AS CIUDAD
-			, CAST(NULL AS STRING) AS PROVINCIA
+			, sub_movimiento
+			, imei
+			, equipo
+			, icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, ejecutivo_asignado_ptr
+			, area_ptr
+			, codigo_vendedor_da_ptr
+			, jefatura_ptr
+			, codigo_usuario
+			, calf_riesgo
+			, cap_endeu
+			, valor_cred
+			, CAST(NULL AS STRING) AS ciudad_usuario
+			, CAST(NULL AS STRING) AS provincia_usuario
+			, CAST(NULL AS STRING) AS ciudad
+			, CAST(NULL AS STRING) AS provincia
 			, distribuidor_crm
 			, canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_ALTA_BAJA_REPROCESO_HIST
+			${ESQUEMA_TABLA}.otc_t_mp_alta_baja_rep
 		WHERE
-			FECHA_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+			fecha_alta BETWEEN '${f_inicio}' AND '${fecha_proceso}'
 			-----------------------*************************-----------------
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, PORTABILIDAD
-			, OPERADORA_ORIGEN
-			, OPERADORA_DESTINO
-			, MOTIVO
-			, CAST(NULL AS STRING) AS COD_PLAN_ANTERIOR
-			, CAST(NULL AS STRING) AS DES_PLAN_ANTERIOR
-			, CAST(NULL AS DOUBLE) AS TB_DESCUENTO
-			, CAST(NULL AS DOUBLE) AS TB_OVERRIDE
-			, CAST(NULL AS DOUBLE) AS DELTA
-			, SUB_MOVIMIENTO
-			, IMEI
-			, EQUIPO
-			, ICC
-			, DOMAIN_LOGIN_OW
-			, NOMBRE_USUARIO_OW
-			, DOMAIN_LOGIN_SUB
-			, NOMBRE_USUARIO_SUB
-			, FORMA_PAGO
-			, EJECUTIVO_ASIGNADO_PTR
-			, AREA_PTR
-			, CODIGO_VENDEDOR_DA_PTR
-			, JEFATURA_PTR
-			, CODIGO_USUARIO
-			, CALF_RIESGO
-			, CAP_ENDEU
-			, VALOR_CRED
-			, CAST( NULL AS STRING) AS CIUDAD_USUARIO
-			, CAST( NULL AS STRING) AS PROVINCIA_USUARIO
-			, CIUDAD
-			, PROVINCIA
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, portabilidad
+			, operadora_origen
+			, operadora_destino
+			, motivo
+			, CAST(NULL AS STRING) AS cod_plan_anterior
+			, CAST(NULL AS STRING) AS des_plan_anterior
+			, CAST(NULL AS DOUBLE) AS tb_descuento
+			, CAST(NULL AS DOUBLE) AS tb_override
+			, CAST(NULL AS DOUBLE) AS delta
+			, sub_movimiento
+			, imei
+			, equipo
+			, icc
+			, domain_login_ow
+			, nombre_usuario_ow
+			, domain_login_sub
+			, nombre_usuario_sub
+			, forma_pago
+			, ejecutivo_asignado_ptr
+			, area_ptr
+			, codigo_vendedor_da_ptr
+			, jefatura_ptr
+			, codigo_usuario
+			, calf_riesgo
+			, cap_endeu
+			, valor_cred
+			, CAST( NULL AS STRING) AS ciudad_usuario
+			, CAST( NULL AS STRING) AS provincia_usuario
+			, ciudad
+			, provincia
 			, distribuidor_crm
 			, canal_transacc
 			, nom_plaza
-			, CODIGO_DISTRIBUIDOR
+			, codigo_distribuidor
 			, cod_da
-			, CAMPANIA
-			, REGION
+			, campania
+			, region
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_ALTA_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_alta_hist_unic
 		WHERE
-			FECHA BETWEEN '${f_inicio}' AND '${fecha_proceso}'
-            ) ZZ
-    ) TT
+			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
+            ) zz
+    ) tt
 WHERE
-	RNUM = 1;
+	rnum = 1;
+
+
+	--N19
 --tabla temporal para el catalogo de USUARIOS pospago
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pos_usr_nc;
 
-CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC AS 
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pos_usr_nc AS 
 SELECT
-	*
+	usuario
+	, nom_usuario
+	, canal
+	, campania
+	, codigo_distribuidor
+	, nom_distribuidor
+	, codigo_plaza
+	, nom_plaza
+	, ciudad
+	, provincia
+	, region
+	, sub_canal
+	, ruc_distribuidor
+	, nuevo_subcanal
+	, fecha
 FROM
 	(
 	SELECT
@@ -1881,12 +1970,23 @@ FROM
 ) tt
 WHERE
 	rnum = 1;
+
+
+	--N20
 --tabla temporal para el catalogo de USUARIOS prepago
 DROP TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pre_usr_nc;
 
-CREATE TABLE ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_Pre_USR_NC AS 
+CREATE TABLE ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pre_usr_nc AS 
 SELECT
-	*
+	cod_generico
+	, canal
+	, codigo_distribuidor
+	, nom_distribuidor
+	, codigo_plaza
+	, nom_plaza
+	, sub_canal
+	, ruc_distribuidor
+	, fecha
 FROM
 	(
 	SELECT
@@ -1908,191 +2008,198 @@ FROM
 		ruc_distribuidor <> 'nan') tt
 WHERE
 	rnum = 1;
+
+
+	--N21
 ----------TABLA UNION FINAL CON DATOS DEL CATALOGO DE USUARIOS
 -- de aqui sale tipo de movimiento
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp;
 
-CREATE TABLE ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP AS
+CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp AS
 SELECT
 	A.*
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.CANAL,C.CANAL) ELSE C.CANAL END AS CANAL_COMERCIAL
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(A.CAMPANIA_MOVIMIENTO_MES,C.CAMPANIA) ELSE C.CAMPANIA END AS CAMPANIA_HOMOLOGADA
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.CODIGO_DISTRIBUIDOR,C.CODIGO_DISTRIBUIDOR) ELSE  C.CODIGO_DISTRIBUIDOR END AS CODIGO_DISTRIBUIDOR
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.NOM_DISTRIBUIDOR,C.NOM_DISTRIBUIDOR) ELSE C.NOM_DISTRIBUIDOR END AS NOM_DISTRIBUIDOR
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.CODIGO_PLAZA,C.CODIGO_PLAZA) ELSE C.CODIGO_PLAZA END AS CODIGO_PLAZA
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.NOM_PLAZA,C.NOM_PLAZA)  ELSE C.NOM_PLAZA END AS NOM_PLAZA
-	, CASE WHEN A.SUB_MOVIMIENTO NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(C.REGION, A.REGION) ELSE A.REGION END  AS REGION_HOMOLOGADA
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN NVL(PRE.sub_canal,C.sub_canal) ELSE  C.sub_canal END AS sub_canal
-	, CASE WHEN A.SUB_MOVIMIENTO IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO')
-	THEN nvl(PRE.RUC_DISTRIBUIDOR, C.RUC_DISTRIBUIDOR) ELSE C.RUC_DISTRIBUIDOR END AS RUC_DISTRIBUIDOR
-	, CASE WHEN A.SUB_MOVIMIENTO NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN C.nuevo_subcanal END AS nuevo_subcanal
-	, CASE WHEN A.SUB_MOVIMIENTO NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
-	THEN C.nom_usuario END AS nom_usuario
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.canal,c.canal) ELSE C.CANAL END AS canal_comercial
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(a.campania_movimiento_mes,c.campania) ELSE c.campania END AS campania_homologada
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.codigo_distribuidor,c.codigo_distribuidor) ELSE  c.codigo_distribuidor END AS codigo_distribuidor
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.nom_distribuidor,c.nom_distribuidor) ELSE c.nom_distribuidor END AS nom_distribuidor
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.codigo_plaza,c.codigo_plaza) ELSE c.codigo_plaza END AS codigo_plaza
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.nom_plaza,c.nom_plaza)  ELSE c.nom_plaza END AS nom_plaza
+	, CASE WHEN a.sub_movimiento NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(c.region, a.region) ELSE a.region END  AS region_homologada
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN NVL(pre.sub_canal,c.sub_canal) ELSE  c.sub_canal END AS sub_canal
+	, CASE WHEN a.sub_movimiento IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO')
+	THEN nvl(pre.ruc_distribuidor, c.ruc_distribuidor) ELSE c.ruc_distribuidor END AS ruc_distribuidor
+	, CASE WHEN a.sub_movimiento NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN c.nuevo_subcanal END AS nuevo_subcanal
+	, CASE WHEN a.sub_movimiento NOT IN ('ALTA PREPAGO', 'ALTA PORTABILIDAD PREPAGO','TRANSFER OUT PREPAGO') 
+	THEN c.nom_usuario END AS nom_usuario
 FROM
-	${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP_2 A
-LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_POS_USR_NC C
+	${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp_2 a
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pos_usr_nc c
 ON
-	(A.DOMAIN_LOGIN_OW = C.USUARIO)
-LEFT JOIN ${ESQUEMA_TEMP}.TMP_OTC_T_CTL_Pre_USR_NC pre
+	(a.domain_login_ow = c.usuario)
+LEFT JOIN ${ESQUEMA_TEMP}.tmp_otc_t_ctl_pre_usr_nc pre
 ON
-	(A.cod_da = PRE.cod_generico)
+	(a.cod_da = pre.cod_generico)
 ;
+
+
+---N22
 --tercera tabla fuente:
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_seg_tmp;
 
 CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_seg_tmp AS
 SELECT
-	TIPO AS ORIGEN_ALTA_SEGMENTO
-	, TELEFONO
-	, FECHA AS FECHA_ALTA_SEGMENTO
-	, CANAL AS CANAL_ALTA_SEGMENTO
-	, SUB_CANAL AS SUB_CANAL_ALTA_SEGMENTO
-	, NUEVO_SUB_CANAL AS NUEVO_SUB_CANAL_ALTA_SEGMENTO
-	, DISTRIBUIDOR AS DISTRIBUIDOR_ALTA_SEGMENTO
-	, OFICINA AS OFICINA_ALTA_SEGMENTO
-	, PORTABILIDAD AS PORTABILIDAD_ALTA_SEGMENTO
-	, OPERADORA_ORIGEN AS OPERADORA_ORIGEN_ALTA_SEGMENTO
-	, OPERADORA_DESTINO AS OPERADORA_DESTINO_ALTA_SEGMENTO
-	, MOTIVO AS MOTIVO_ALTA_SEGMENTO
+	tipo as origen_alta_segmento
+	, telefono
+	, fecha as fecha_alta_segmento
+	, canal as canal_alta_segmento
+	, sub_canal as sub_canal_alta_segmento
+	, nuevo_sub_canal as nuevo_sub_canal_alta_segmento
+	, distribuidor as distribuidor_alta_segmento
+	, oficina as oficina_alta_segmento
+	, portabilidad as portabilidad_alta_segmento
+	, operadora_origen as operadora_origen_alta_segmento
+	, operadora_destino as operadora_destino_alta_segmento
+	, motivo as motivo_alta_segmento
 FROM
 	(
 	SELECT
-		TIPO
-		, TELEFONO
-		, FECHA
-		, CANAL
-		, SUB_CANAL
-		, NUEVO_SUB_CANAL
-		, DISTRIBUIDOR
-		, OFICINA
-		, PORTABILIDAD
-		, OPERADORA_ORIGEN
-		, OPERADORA_DESTINO
-		, MOTIVO
-		,  
-            ROW_NUMBER() OVER (
-                PARTITION BY TELEFONO
+		tipo
+		, telefono
+		, fecha
+		, canal
+		, sub_canal
+		, nuevo_sub_canal
+		, distribuidor
+		, oficina
+		, portabilidad
+		, operadora_origen
+		, operadora_destino
+		, motivo
+		, ROW_NUMBER() OVER (PARTITION BY telefono
 	ORDER BY
-		FECHA DESC
-            ) AS RNUM
+		fecha DESC) AS rnum
 	FROM
 		(
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_POS_PRE_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_pos_pre_hist_unic
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, CAST(NULL AS STRING) AS PORTABILIDAD
-			, CAST(NULL AS STRING) AS OPERADORA_ORIGEN
-			, CAST(NULL AS STRING) AS OPERADORA_DESTINO
-			, CAST(NULL AS STRING) AS MOTIVO
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, CAST(NULL AS STRING) AS portabilidad
+			, CAST(NULL AS STRING) AS operadora_origen
+			, CAST(NULL AS STRING) AS operadora_destino
+			, CAST(NULL AS STRING) AS motivo
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_PRE_POS_HIST_UNIC
+			${ESQUEMA_TABLA}.otc_t_pre_pos_hist_unic
 	UNION ALL
 		SELECT
-			TIPO
-			, TELEFONO
-			, FECHA
-			, CANAL
-			, SUB_CANAL
-			, NUEVO_SUB_CANAL
-			, DISTRIBUIDOR
-			, OFICINA
-			, PORTABILIDAD
-			, OPERADORA_ORIGEN
-			, OPERADORA_DESTINO
-			, MOTIVO
+			tipo
+			, telefono
+			, fecha
+			, canal
+			, sub_canal
+			, nuevo_sub_canal
+			, distribuidor
+			, oficina
+			, portabilidad
+			, operadora_origen
+			, operadora_destino
+			, motivo
 		FROM
-			${ESQUEMA_TABLA}.OTC_T_ALTA_HIST_UNIC
-            ) ZZ
-    ) TT
+			${ESQUEMA_TABLA}.otc_t_alta_hist_unic
+            ) zz
+    ) tt
 WHERE
-	RNUM = 1;
+	rnum = 1;
+
+
+
+	--N23
 -- ESTA TABLA NO SE UTILIZA EN 360_GENERAL
 DROP TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_tmp_t_mov_mes;
 
 CREATE TABLE ${ESQUEMA_TEMP}.otc_t_360_parque_1_tmp_t_mov_mes AS
 SELECT
-	NUM_TELEFONICO
-	, CODIGO_PLAN
-	, FECHA_ALTA
-	, FECHA_LAST_STATUS
-	, ESTADO_ABONADO
-	, FECHA_PROCESO
-	, NUMERO_ABONADO
-	, LINEA_NEGOCIO
-	, ACCOUNT_NUM
-	, SUB_SEGMENTO
-	, TIPO_DOC_CLIENTE
-	, IDENTIFICACION_CLIENTE
-	, CLIENTE
-	, CUSTOMER_REF
-	, COUNTED_DAYS
-	, LINEA_NEGOCIO_HOMOLOGADO
-	, CATEGORIA_PLAN
-	, TARIFA
-	, NOMBRE_PLAN
-	, MARCA
-	, CICLO_FACT
-	, CORREO_CLIENTE_PR
-	, TELEFONO_CLIENTE_PR
-	, B.IMEI
-	, ORDEN
-	, TIPO_MOVIMIENTO_MES
-	, B.FECHA_MOVIMIENTO_MES
-	, ES_PARQUE
-	, BANCO
-	, CANAL_MOVIMIENTO_MES
-	, SUB_CANAL_MOVIMIENTO_MES
-	, NUEVO_SUB_CANAL_MOVIMIENTO_MES
-	, DISTRIBUIDOR_MOVIMIENTO_MES
-	, OFICINA_MOVIMIENTO_MES
-	, PORTABILIDAD_MOVIMIENTO_MES
-	, OPERADORA_ORIGEN_MOVIMIENTO_MES
-	, OPERADORA_DESTINO_MOVIMIENTO_MES
-	, MOTIVO_MOVIMIENTO_MES
-	, COD_PLAN_ANTERIOR_MOVIMIENTO_MES
-	, DES_PLAN_ANTERIOR_MOVIMIENTO_MES
-	, TB_DESCUENTO_MOVIMIENTO_MES
-	, TB_OVERRIDE_MOVIMIENTO_MES
-	, DELTA_MOVIMIENTO_MES
+	num_telefonico
+	, codigo_plan
+	, fecha_alta
+	, fecha_last_status
+	, estado_abonado
+	, fecha_proceso
+	, numero_abonado
+	, linea_negocio
+	, account_num
+	, sub_segmento
+	, tipo_doc_cliente
+	, identificacion_cliente
+	, cliente
+	, customer_ref
+	, counted_days
+	, linea_negocio_homologado
+	, categoria_plan
+	, tarifa
+	, nombre_plan
+	, marca
+	, ciclo_fact
+	, correo_cliente_pr
+	, telefono_cliente_pr
+	, b.imei
+	, orden
+	, tipo_movimiento_mes
+	, b.fecha_movimiento_mes
+	, es_parque
+	, banco
+	, canal_movimiento_mes
+	, sub_canal_movimiento_mes
+	, nuevo_sub_canal_movimiento_mes
+	, distribuidor_movimiento_mes
+	, oficina_movimiento_mes
+	, portabilidad_movimiento_mes
+	, operadora_origen_movimiento_mes
+	, operadora_destino_movimiento_mes
+	, motivo_movimiento_mes
+	, cod_plan_anterior_movimiento_mes
+	, des_plan_anterior_movimiento_mes
+	, tb_descuento_movimiento_mes
+	, tb_override_movimiento_mes
+	, delta_movimiento_mes
 FROM
 	--check! CAMBIADO EN RF PARA ETAPA DE DESARROLLO ${ESQUEMA_TEMP} POR db_temporales
 	--${ESQUEMA_TEMP}.${TABLA_PIVOTANTE} AS B
 	--db_temporales.${TABLA_PIVOTANTE} AS B
-	db_desarrollo2021.otc_t_360_parque_1_tmp AS B
-LEFT JOIN ${ESQUEMA_TEMP}.OTC_T_360_PARQUE_1_MOV_MES_TMP AS A ON
-	(NUM_TELEFONICO = A.TELEFONO)
-	AND B.FECHA_MOVIMIENTO_MES = A.FECHA_MOVIMIENTO_MES;
+	db_desarrollo2021.otc_t_360_parque_1_tmp AS b
+LEFT JOIN ${ESQUEMA_TEMP}.otc_t_360_parque_1_mov_mes_tmp AS A
+	ON	(num_telefonico = a.telefono)
+	AND b.fecha_movimiento_mes = a.fecha_movimiento_mes;
 ----- PROCESO
 --sh -x /home/nae108834/Cliente360_RF/bin/D_OTC_T_360_MOVIMIENTOS_PARQUE.sh 20220927
 ----- REPROCESO
