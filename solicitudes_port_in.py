@@ -117,5 +117,5 @@ timeend = datetime.datetime.now()
 duracion = timeend - timestart
 print("Duracion {}".format(duracion))
 
-#/usr/hdp/current/spark2-client/bin/pyspark --master yarn --executor-memory 16G --num-executors 10 --executor-cores 2 --driver-memory 2G --jars /home/nae108834/D_SOLICITUDES_PORT_IN/lib/ojdbc8.jar
+#/usr/hdp/current/spark2-client/bin/pyspark --master yarn --executor-memory 16G --num-executors 4 --executor-cores 4 --driver-memory 16G --jars /home/nae108834/D_SOLICITUDES_PORT_IN/lib/ojdbc8.jar
 
