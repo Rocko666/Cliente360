@@ -37,7 +37,7 @@ SELECT
 	, CAST( NULL AS STRING) AS motivo
 	, nom_distribuidor AS distribuidor
 	, oficina
-	--INSERTADO COMISIONES  BIGD-677----------------------------
+	--INSERTADO COMISIONES  BIGD-60----------------------------
 	, CASE
 		WHEN linea_negocio LIKE '%H%BRIDO'
 		AND upper(portabilidad)= 'NO' THEN 'ALTA POSPAGO'
@@ -127,7 +127,7 @@ SELECT
 	, motivo_baja AS motivo
 	, CAST(NULL AS STRING) AS distribuidor
 	, CAST(NULL AS STRING) AS oficina
-	--INSERTADO COMISIONES  BIGD-677
+	--INSERTADO COMISIONES  BIGD-60
 	, 'BAJA CHARGEBACK' AS sub_movimiento
 	, CAST(NULL AS STRING) AS imei
 	, CAST(NULL AS STRING) AS equipo
@@ -203,7 +203,7 @@ SELECT
 	, CAST(NULL AS STRING) AS nuevo_sub_canal
 	, nom_distribuidor_usuario AS distribuidor
 	, oficina_usuario AS oficina
-	--INSERTADO COMISIONES  BIGD-677
+	--INSERTADO COMISIONES  BIGD-60
 	, 'TRANSFER IN POSPAGO' AS sub_movimiento
 	, imei
 	, equipo
@@ -272,7 +272,7 @@ SELECT
 	, CAST(NULL AS STRING) AS nuevo_sub_canal
 	, nom_distribuidor_usuario AS distribuidor
 	, oficina_usuario AS oficina
-	-----------------	INSERTADO COMISIONES  BIGD-677
+	-----------------	INSERTADO COMISIONES  BIGD-60
 	, 'TRANSFER OUT PREPAGO' AS sub_movimiento
 	, imei
 	, equipo
@@ -342,7 +342,7 @@ SELECT
 	, tarifa_ov_plan_ant AS tb_descuento
 	, descuento_tarifa_plan_ant AS tb_override
 	, delta
-	--INSERTADO COMISIONES  BIGD-677 
+	--INSERTADO COMISIONES  BIGD-60 
 	, (CASE
 		WHEN (delta >= -0.99 AND delta < 0) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
 		WHEN (delta > 0	AND delta <= 0.99) THEN 'CAMBIO DE PLAN POSICIONAMIENTO'
@@ -378,7 +378,7 @@ WHERE
 
 
 	----N06
------------------------------INSERTADO COMISIONES  BIGD-677-PARA INCLUIR TABLA NO RECLICLABLES--------------------------
+-----------------------------INSERTADO COMISIONES  BIGD-60-PARA INCLUIR TABLA NO RECLICLABLES--------------------------
 --ELIMINA LA DATA PRE EXISTENTE
 DELETE
 FROM
@@ -628,7 +628,7 @@ SELECT
 	, xx.motivo
 	, xx.distribuidor
 	, xx.oficina
-	--insertado COMISIONES  BIGD-677
+	--insertado COMISIONES  BIGD-60
 	, xx.sub_movimiento
 	, xx.imei
 	, xx.equipo
@@ -682,7 +682,7 @@ FROM
 		, aa.motivo
 		, aa.distribuidor
 		, aa.oficina
-		--insertado COMISIONES  BIGD-677
+		--insertado COMISIONES  BIGD-60
 		, aa.sub_movimiento
 		, aa.imei
 		, aa.equipo
@@ -754,7 +754,7 @@ SELECT
 	, xx.motivo
 	, xx.distribuidor
 	, xx.oficina
-	--insertado COMISIONES  BIGD-677
+	--insertado COMISIONES  BIGD-60
 	, xx.sub_movimiento
 	, xx.imei
 	, xx.equipo
@@ -808,7 +808,7 @@ FROM
 		, aa.motivo
 		, aa.distribuidor
 		, aa.oficina
-		--insertado COMISIONES  BIGD-677
+		--insertado COMISIONES  BIGD-60
 		, aa.sub_movimiento
 		, aa.imei
 		, aa.equipo
@@ -877,7 +877,7 @@ SELECT
 	, xx.nuevo_sub_canal
 	, xx.distribuidor
 	, xx.oficina
-	--    		insertado COMISIONES  BIGD-677
+	--    		insertado COMISIONES  BIGD-60
 	, xx.sub_movimiento
 	, xx.imei
 	, xx.equipo
@@ -924,7 +924,7 @@ FROM
 		, aa.nuevo_sub_canal
 		, aa.distribuidor
 		, aa.oficina
-		--    		insertado COMISIONES  BIGD-677
+		--    		insertado COMISIONES  BIGD-60
 		, aa.sub_movimiento
 		, aa.imei
 		, aa.equipo
@@ -989,7 +989,7 @@ SELECT
 	, xx.nuevo_sub_canal
 	, xx.distribuidor
 	, xx.oficina
-	--    		insertado COMISIONES  BIGD-677
+	--    		insertado COMISIONES  BIGD-60
 	, xx.sub_movimiento
 	, xx.imei
 	, xx.equipo
@@ -1036,7 +1036,7 @@ FROM
 		, aa.nuevo_sub_canal
 		, aa.distribuidor
 		, aa.oficina
-		--    		insertado COMISIONES  BIGD-677
+		--    		insertado COMISIONES  BIGD-60
 		, aa.sub_movimiento
 		, aa.imei
 		, aa.equipo
@@ -1106,7 +1106,7 @@ SELECT
 	, xx.tb_descuento
 	, xx.tb_override
 	, xx.delta
-	--insertado COMISIONES  BIGD-677
+	--insertado COMISIONES  BIGD-60
 	, xx.sub_movimiento
 	, xx.domain_login_ow
 	, xx.nombre_usuario_ow
@@ -1144,7 +1144,7 @@ FROM
 		, aa.tb_descuento
 		, aa.tb_override
 		, aa.delta
-		--insertado COMISIONES  BIGD-677
+		--insertado COMISIONES  BIGD-60
 		, aa.sub_movimiento
 		, aa.domain_login_ow
 		, aa.nombre_usuario_ow
@@ -1466,7 +1466,7 @@ SELECT
 	, tb_descuento as tb_descuento_movimiento_mes
 	, tb_override as tb_override_movimiento_mes
 	, delta as delta_movimiento_mes
-	--insertado COMISIONES  BIGD-677 para unir campos y llevarlos a 360_general
+	--insertado COMISIONES  BIGD-60 para unir campos y llevarlos a 360_general
 	, sub_movimiento
 	, imei
 	, equipo
@@ -1758,7 +1758,7 @@ FROM
 			${ESQUEMA_TABLA}.otc_t_baja_hist_unic
 		WHERE
 			fecha BETWEEN '${f_inicio}' AND '${fecha_proceso}'
-			--- INSERTADO COMISIONES  BIGD-677
+			--- INSERTADO COMISIONES  BIGD-60
 	UNION ALL
 		SELECT
 			tipo

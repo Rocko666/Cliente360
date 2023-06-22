@@ -7,7 +7,7 @@
 #------------------------------------------------------------------------#
 # REFACTORING: CRISTIAN ORTIZ											 #
 # MODIFICADO : 26/JUN/2022												 #
-# COMENTARIO: Se hizo un REFACTORING de este proceso para el BIGD-677    #
+# COMENTARIO: Se hizo un REFACTORING de este proceso para el BIGD-60    #
 # "EXTRACTOR DE MOVIMIENTOS" 											 #
 ##########################################################################
 #------------------------------------------------------
