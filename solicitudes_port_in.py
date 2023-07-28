@@ -120,6 +120,6 @@ print("Duracion {}".format(duracion))
 #/usr/hdp/current/spark2-client/bin/pyspark --master yarn --executor-memory 16G --num-executors 4 --executor-cores 4 --driver-memory 16G --jars /home/nae108834/D_SOLICITUDES_PORT_IN/lib/ojdbc8.jar
 
 /usr/hdp/current/spark2-client/bin/pyspark --master yarn --executor-memory 16G --num-executors 4 --executor-cores 4 --driver-memory 16G \
---conf spark.ui.enabled=false \
---conf spark.dynamicAllocation.enabled=false \
+ 
+
 --conf spark.port.maxRetries=100 
